@@ -1,12 +1,11 @@
 #include <error_utils.hpp>
-#include <iostream>
-#include <fstream>
-#include <cstring>
 #include <fcntl.h>
+#include <fstream>
+#include <iostream>
 #include <unistd.h>
 
 // Example: Wrapper for C file API
-StringResult read_file_c_api(const std::string& filename) {
+StringResult read_file_c_api(const std::string &filename) {
     // Open a file using C API
     errno = 0;
     const int fd = open(filename.c_str(), O_RDONLY);
@@ -42,7 +41,7 @@ StringResult read_file_c_api(const std::string& filename) {
 }
 
 // Example: C++ stream with error handling
-StringResult read_file_cpp_api(const std::string& filename) {
+StringResult read_file_cpp_api(const std::string &filename) {
     std::ifstream file(filename);
     if (!file.is_open()) {
         // For C++ streams, we need to map to appropriate errc
@@ -65,7 +64,7 @@ StringResult read_file_cpp_api(const std::string& filename) {
 }
 
 // Example: Custom error checking logic
-IntResult parse_positive_number(const std::string& str) {
+IntResult parse_positive_number(const std::string &str) {
     try {
         int value = std::stoi(str);
 
@@ -75,17 +74,17 @@ IntResult parse_positive_number(const std::string& str) {
         }
 
         return value;
-    } catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
         return make_error<int>(std::errc::invalid_argument,
                                "Invalid number format");
-    } catch (const std::out_of_range&) {
+    } catch (const std::out_of_range &) {
         return make_error<int>(std::errc::result_out_of_range,
                                "Number out of range");
     }
 }
 
 // Example: Chaining error calls
-Result<int> get_file_size(const std::string& filename) {
+Result<int> get_file_size(const std::string &filename) {
     auto content_result = read_file_cpp_api(filename);
     if (!content_result) {
         // Forward the error

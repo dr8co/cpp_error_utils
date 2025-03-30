@@ -22,19 +22,19 @@ public:
     /// Create an error with the specified error code and optional context.
     /// \param code The system error code
     /// \param context Additional context information about the error
-    explicit Error(const std::error_code& code, const std::string_view context = {})
+    explicit Error(const std::error_code &code, const std::string_view context = {})
         : context_{context}, error_code_{code} {}
 
     explicit Error(const ErrorCode auto code, const std::string_view context = {})
         : context_{context}, error_code_{std::make_error_code(code)} {}
 
-    Error(const Error& other) = default;
+    Error(const Error &other) = default;
 
-    Error(Error&& other) noexcept
+    Error(Error &&other) noexcept
         : context_{std::move(other.context_)},
           error_code_{other.error_code_} {}
 
-    Error& operator=(const Error& other) {
+    Error &operator=(const Error &other) {
         if (this == &other)
             return *this;
         context_ = other.context_;
@@ -42,7 +42,7 @@ public:
         return *this;
     }
 
-    Error& operator=(Error&& other) noexcept {
+    Error &operator=(Error &&other) noexcept {
         if (this == &other)
             return *this;
         context_ = std::move(other.context_);
@@ -51,7 +51,7 @@ public:
     }
 
     void set_context(const std::string_view context) { context_ = context; }
-    void set_error_code(const std::error_code& error_code) { error_code_ = error_code; }
+    void set_error_code(const std::error_code &error_code) { error_code_ = error_code; }
 
     /// Get the underlying error code.
     /// \return The error code
@@ -59,7 +59,7 @@ public:
 
     [[nodiscard]] std::string context() const { return context_; }
 
-    friend void swap(Error& lhs, Error& rhs) noexcept {
+    friend void swap(Error &lhs, Error &rhs) noexcept {
         std::swap(lhs.context_, rhs.context_);
         std::swap(lhs.error_code_, rhs.error_code_);
     }
@@ -80,7 +80,7 @@ public:
         return error_code_ == std::make_error_code(code);
     }
 
-    [[nodiscard]] bool is(const std::error_code& code) const noexcept {
+    [[nodiscard]] bool is(const std::error_code &code) const noexcept {
         return error_code_ == code;
     }
 
@@ -124,7 +124,7 @@ template <typename T>
 }
 
 template <typename T>
-[[nodiscard]] Result<T> make_error(const std::error_code& code, const std::string_view context = {}) {
+[[nodiscard]] Result<T> make_error(const std::error_code &code, const std::string_view context = {}) {
     return std::unexpected(Error{code, context});
 }
 
