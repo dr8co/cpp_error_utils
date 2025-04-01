@@ -10,7 +10,7 @@ StringResult read_file_c_api(const std::string &filename) {
     errno = 0;
     const int fd = open(filename.c_str(), O_RDONLY);
     if (fd == -1) {
-        return make_error_from_errno<std::string>(std::format("Failed to open '{}'", filename));
+        return error_utils::make_error_from_errno<std::string>(std::format("Failed to open '{}'", filename));
     }
 
     // Read file content
@@ -28,9 +28,9 @@ StringResult read_file_c_api(const std::string &filename) {
         }
         if (bytes_read == -1) {
             // Error occurred
-            const auto err = last_error();
+            const auto err = error_utils::last_error();
             close(fd);
-            return make_error<std::string>(err, std::format("Error reading '{}'", filename));
+            return error_utils::make_error<std::string>(err, std::format("Error reading '{}'", filename));
         }
 
         content.append(buffer, bytes_read);
@@ -45,8 +45,8 @@ StringResult read_file_cpp_api(const std::string &filename) {
     std::ifstream file(filename);
     if (!file.is_open()) {
         // For C++ streams, we need to map to appropriate errc
-        return make_error<std::string>(std::errc::no_such_file_or_directory,
-                                       std::format("Cannot open '{}'", filename));
+        return error_utils::make_error<std::string>(std::errc::no_such_file_or_directory,
+                                                    std::format("Cannot open '{}'", filename));
     }
 
     std::string content;
@@ -56,8 +56,8 @@ StringResult read_file_cpp_api(const std::string &filename) {
     }
 
     if (file.bad()) {
-        return make_error<std::string>(std::errc::io_error,
-                                       std::format("Error reading '{}'", filename));
+        return error_utils::make_error<std::string>(std::errc::io_error,
+                                                    std::format("Error reading '{}'", filename));
     }
 
     return content;
@@ -69,17 +69,17 @@ IntResult parse_positive_number(const std::string &str) {
         int value = std::stoi(str);
 
         if (value < 0) {
-            return make_error<int>(std::errc::invalid_argument,
-                                   "Number must be positive");
+            return error_utils::make_error<int>(std::errc::invalid_argument,
+                                                "Number must be positive");
         }
 
         return value;
     } catch (const std::invalid_argument &) {
-        return make_error<int>(std::errc::invalid_argument,
-                               "Invalid number format");
+        return error_utils::make_error<int>(std::errc::invalid_argument,
+                                            "Invalid number format");
     } catch (const std::out_of_range &) {
-        return make_error<int>(std::errc::result_out_of_range,
-                               "Number out of range");
+        return error_utils::make_error<int>(std::errc::result_out_of_range,
+                                            "Number out of range");
     }
 }
 

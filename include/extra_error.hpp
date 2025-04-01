@@ -4,6 +4,7 @@
 #include <system_error>
 
 
+namespace error_utils {
 // clang-format off
 // @formatter:off
 
@@ -56,144 +57,155 @@ enum class ExtraErrorCondition {
     other_error,     ///< Other errors that do not fit into the above categories.
 };
 
-// clang-format on
-// @formatter:on
+    // clang-format on
+    // @formatter:on
 
-// Define the error condition category
-class ExtraErrorConditionCategory final : public std::error_category {
-public:
-    [[nodiscard]] const char *name() const noexcept override {
-        return "ExtraErrorCondition";
-    }
+    namespace detail {
+        // Define the error condition category
+        class ExtraErrorConditionCategory final : public std::error_category {
+        public:
+            [[nodiscard]] const char *name() const noexcept override {
+                return "ExtraErrorCondition";
+            }
 
-    [[nodiscard]] std::string message(int ev) const override {
-        switch (static_cast<ExtraErrorCondition>(ev)) {
-            case ExtraErrorCondition::logic_error:
-                return "Logic error";
-            case ExtraErrorCondition::runtime_error:
-                return "Runtime error";
-            case ExtraErrorCondition::resource_error:
-                return "Resource error";
-            case ExtraErrorCondition::access_error:
-                return "Access error";
-            case ExtraErrorCondition::other_error:
-                return "Other error";
-            default:
-                return "Unrecognized error condition";
+            [[nodiscard]] std::string message(int ev) const override {
+                switch (static_cast<ExtraErrorCondition>(ev)) {
+                    case ExtraErrorCondition::logic_error:
+                        return "Logic error";
+                    case ExtraErrorCondition::runtime_error:
+                        return "Runtime error";
+                    case ExtraErrorCondition::resource_error:
+                        return "Resource error";
+                    case ExtraErrorCondition::access_error:
+                        return "Access error";
+                    case ExtraErrorCondition::other_error:
+                        return "Other error";
+                    default:
+                        return "Unrecognized error condition";
+                }
+            }
+        };
+
+        // Singleton for the condition category
+        inline const std::error_category &extra_error_condition_category() {
+            static ExtraErrorConditionCategory instance;
+            return instance;
         }
-    }
-};
 
-// Singleton for the condition category
-inline const std::error_category &extra_error_condition_category() {
-    static ExtraErrorConditionCategory instance;
-    return instance;
-}
+        class ExtraErrorCategory final : public std::error_category {
+        public:
+            [[nodiscard]] const char *name() const noexcept override {
+                return "ExtraError";
+            }
 
-class ExtraErrorCategory final : public std::error_category {
-public:
-    [[nodiscard]] const char *name() const noexcept override {
-        return "ExtraError";
-    }
+            [[nodiscard]] std::string message(int ev) const override {
+                switch (static_cast<ExtraError>(ev)) {
+                    case ExtraError::invalid_argument:
+                        return "Invalid argument exception";
+                    case ExtraError::length_error:
+                        return "Length error exception";
 
-    [[nodiscard]] std::string message(int ev) const override {
-        switch (static_cast<ExtraError>(ev)) {
-            case ExtraError::invalid_argument:
-                return "Invalid argument exception";
-            case ExtraError::length_error:
-                return "Length error exception";
+                    //
+                    case ExtraError::value_too_small:
+                        return "Value too small (underflow exception)";
+                    case ExtraError::nonexistent_local_time:
+                        return "Nonexistent local time exception";
+                    case ExtraError::ambiguous_local_time:
+                        return "Ambiguous local time exception";
+                    case ExtraError::format_error:
+                        return "Format error exception";
 
-            //
-            case ExtraError::value_too_small:
-                return "Value too small (underflow exception)";
-            case ExtraError::nonexistent_local_time:
-                return "Nonexistent local time exception";
-            case ExtraError::ambiguous_local_time:
-                return "Ambiguous local time exception";
-            case ExtraError::format_error:
-                return "Format error exception";
+                    //
+                    case ExtraError::bad_alloc:
+                        return "Bad allocation exception";
+                    case ExtraError::bad_typeid:
+                        return "Bad typeid exception";
+                    case ExtraError::bad_cast:
+                        return "Bad cast exception";
 
-            //
-            case ExtraError::bad_alloc:
-                return "Bad allocation exception";
-            case ExtraError::bad_typeid:
-                return "Bad typeid exception";
-            case ExtraError::bad_cast:
-                return "Bad cast exception";
+                    //
+                    case ExtraError::bad_optional_access:
+                        return "Bad optional access exception";
+                    case ExtraError::bad_expected_access:
+                        return "Bad expected access exception";
+                    case ExtraError::bad_variant_access:
+                        return "Bad variant access exception";
+                    case ExtraError::bad_weak_ptr:
+                        return "Bad weak pointer exception";
+                    case ExtraError::bad_function_call:
+                        return "Bad function call exception";
 
-            //
-            case ExtraError::bad_optional_access:
-                return "Bad optional access exception";
-            case ExtraError::bad_expected_access:
-                return "Bad expected access exception";
-            case ExtraError::bad_variant_access:
-                return "Bad variant access exception";
-            case ExtraError::bad_weak_ptr:
-                return "Bad weak pointer exception";
-            case ExtraError::bad_function_call:
-                return "Bad function call exception";
+                    //
+                    case ExtraError::bad_exception:
+                        return "Bad exception";
+                    case ExtraError::exception:
+                        return "Exception caught";
+                    case ExtraError::unknown_exception:
+                        return "Unknown exception caught";
+                    default:
+                        return "Unrecognized ExtraError";
+                }
+            }
 
-            //
-            case ExtraError::bad_exception:
-                return "Bad exception";
-            case ExtraError::exception:
-                return "Exception caught";
-            case ExtraError::unknown_exception:
-                return "Unknown exception caught";
-            default:
-                return "Unrecognized ExtraError";
+            // Add mapping from error codes to error conditions
+            [[nodiscard]] std::error_condition default_error_condition(int ev) const noexcept override {
+                switch (static_cast<ExtraError>(ev)) {
+                    case ExtraError::invalid_argument:
+                    case ExtraError::length_error:
+                        return {static_cast<int>(ExtraErrorCondition::logic_error), extra_error_condition_category()};
+
+                    case ExtraError::value_too_small:
+                    case ExtraError::nonexistent_local_time:
+                    case ExtraError::ambiguous_local_time:
+                    case ExtraError::format_error:
+                        return {static_cast<int>(ExtraErrorCondition::runtime_error), extra_error_condition_category()};
+
+                    case ExtraError::bad_alloc:
+                    case ExtraError::bad_typeid:
+                    case ExtraError::bad_cast:
+                        return {
+                            static_cast<int>(ExtraErrorCondition::resource_error), extra_error_condition_category()
+                        };
+
+                    case ExtraError::bad_optional_access:
+                    case ExtraError::bad_expected_access:
+                    case ExtraError::bad_variant_access:
+                    case ExtraError::bad_weak_ptr:
+                    case ExtraError::bad_function_call:
+                        return {static_cast<int>(ExtraErrorCondition::access_error), extra_error_condition_category()};
+
+                    case ExtraError::bad_exception:
+                    case ExtraError::exception:
+                    case ExtraError::unknown_exception:
+                    default:
+                        return {static_cast<int>(ExtraErrorCondition::other_error), extra_error_condition_category()};
+                }
+            }
+        };
+
+        inline const std::error_category &extra_error_category() {
+            static ExtraErrorCategory instance;
+            return instance;
         }
+    } // namespace detail
+
+    inline std::error_code make_error_code(ExtraError e) {
+        return {static_cast<int>(e), detail::extra_error_category()};
     }
 
-    // Add mapping from error codes to error conditions
-    [[nodiscard]] std::error_condition default_error_condition(int ev) const noexcept override {
-        switch (static_cast<ExtraError>(ev)) {
-            case ExtraError::invalid_argument:
-            case ExtraError::length_error:
-                return {static_cast<int>(ExtraErrorCondition::logic_error), extra_error_condition_category()};
-
-            case ExtraError::value_too_small:
-            case ExtraError::nonexistent_local_time:
-            case ExtraError::ambiguous_local_time:
-            case ExtraError::format_error:
-                return {static_cast<int>(ExtraErrorCondition::runtime_error), extra_error_condition_category()};
-
-            case ExtraError::bad_alloc:
-            case ExtraError::bad_typeid:
-            case ExtraError::bad_cast:
-                return {static_cast<int>(ExtraErrorCondition::resource_error), extra_error_condition_category()};
-
-            case ExtraError::bad_optional_access:
-            case ExtraError::bad_expected_access:
-            case ExtraError::bad_variant_access:
-            case ExtraError::bad_weak_ptr:
-            case ExtraError::bad_function_call:
-                return {static_cast<int>(ExtraErrorCondition::access_error), extra_error_condition_category()};
-
-            case ExtraError::bad_exception:
-            case ExtraError::exception:
-            case ExtraError::unknown_exception:
-            default:
-                return {static_cast<int>(ExtraErrorCondition::other_error), extra_error_condition_category()};
-        }
+    inline std::error_condition make_error_condition(ExtraErrorCondition e) {
+        return {static_cast<int>(e), detail::extra_error_condition_category()};
     }
-};
+} // namespace error_utils
 
-inline const std::error_category &extra_error_category() {
-    static ExtraErrorCategory instance;
-    return instance;
-}
+// STL customization points
+namespace std {
+    template <>
+    struct is_error_code_enum<error_utils::ExtraError> : true_type {};
 
-template <>
-struct std::is_error_code_enum<ExtraError> : std::true_type {};
+    template <>
+    struct is_error_condition_enum<error_utils::ExtraErrorCondition> : true_type {};
+} // namespace std
 
-template <>
-struct std::is_error_condition_enum<ExtraErrorCondition> : std::true_type {};
-
-inline std::error_code make_error_code(ExtraError e) {
-    return {static_cast<int>(e), extra_error_category()};
-}
-
-inline std::error_condition make_error_condition(ExtraErrorCondition e) {
-    return {static_cast<int>(e), extra_error_condition_category()};
-}
+using error_utils::ExtraError;
+using error_utils::ExtraErrorCondition;
