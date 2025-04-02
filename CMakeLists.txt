@@ -41,3 +41,7 @@ if (CPP_ERR_PACKAGE)
     include(CEPackaging)
 endif ()
 
+if (CPP_ERR_BUILD_DOC)
+    add_subdirectory(doc)
+endif ()
+

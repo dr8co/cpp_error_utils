@@ -621,3 +621,8 @@ Temporary Items
 
 # Generated packages
 Packages/
+
+# exclude generated documentation
+doc/generated
+.cache
+CMakeUserPresets.json
