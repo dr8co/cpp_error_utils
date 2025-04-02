@@ -100,12 +100,16 @@ enum class ExtraErrorCondition {
             }
         };
 
-        // Singleton for the condition category
+        /// Returns a reference to the \p ExtraErrorCondition error category.
+        /// \return A singleton instance of \p ExtraErrorConditionCategory
         inline const std::error_category &extra_error_condition_category() {
             static ExtraErrorConditionCategory instance;
             return instance;
         }
 
+        /// Error category for \p ExtraError
+        /// This class provides a mapping from \p ExtraError enum values to error messages.
+        /// It also provides a default error condition mapping for each error code.
         class ExtraErrorCategory final : public std::error_category {
         public:
             [[nodiscard]] const char *name() const noexcept override {
@@ -161,7 +165,9 @@ enum class ExtraErrorCondition {
                 }
             }
 
-            // Add mapping from error codes to error conditions
+            /// Provides the default error condition for the given error code.
+            /// \param ev The error code to map to an error condition.
+            /// \return The corresponding error condition.
             [[nodiscard]] std::error_condition default_error_condition(int ev) const noexcept override {
                 switch (static_cast<ExtraError>(ev)) {
                     case ExtraError::invalid_argument:
@@ -197,20 +203,28 @@ enum class ExtraErrorCondition {
             }
         };
 
+        /// This function provides a singleton instance of the \p ExtraErrorCategory class,
+        /// @return A singleton reference to the \p ExtraError error category.
         inline const std::error_category &extra_error_category() {
             static ExtraErrorCategory instance;
             return instance;
         }
     } // namespace detail
 
-    inline std::error_code make_error_code(ExtraError e) {
+
+    /// Create an error code from an \p ExtraError enum value.
+    /// \param e The \p ExtraError enum value
+    constexpr std::error_code make_error_code(ExtraError e) {
         return {static_cast<int>(e), detail::extra_error_category()};
     }
 
-    inline std::error_condition make_error_condition(ExtraErrorCondition e) {
+    /// Create an error condition from an \p ExtraErrorCondition enum value.
+    /// \param e The \p ExtraErrorCondition enum value
+    constexpr std::error_condition make_error_condition(ExtraErrorCondition e) {
         return {static_cast<int>(e), detail::extra_error_condition_category()};
     }
 } // namespace error_utils
+
 
 // STL customization points
 namespace std {
@@ -253,6 +267,8 @@ namespace error_utils {
         std::error_code error_code_{};
 
     public:
+        Error() = default;
+
         /// Create an error with the specified error code and optional context.
         /// \param code The system error code
         /// \param context Additional context information about the error
@@ -283,6 +299,8 @@ namespace error_utils {
             error_code_ = other.error_code_;
             return *this;
         }
+
+        ~Error() = default;
 
         constexpr friend bool operator==(const Error &lhs, const Error &rhs) noexcept {
             return lhs.error_code_ == rhs.error_code_;
@@ -321,11 +339,15 @@ namespace error_utils {
 
         /// Get the underlying error code.
         /// \return The error code
-        [[nodiscard]] std::error_code eror_code() const noexcept { return error_code_; }
+        [[nodiscard]] const std::error_code &error_code() const noexcept { return error_code_; }
 
-        [[nodiscard]] std::string context() const { return context_; }
+        [[nodiscard]] const std::string &context() const noexcept { return context_; }
 
         [[nodiscard]] int value() const noexcept { return error_code_.value(); }
+
+        [[nodiscard]] const std::error_category &category() const noexcept {
+            return error_code_.category();
+        }
 
         /// Get the error message including context if available.
         /// \return Formatted error message
@@ -361,6 +383,7 @@ namespace error_utils {
             ((detail::convertible_to_error_code<Others> || std::is_same_v<Code, std::error_code>) && ...)
         [[nodiscard]] bool is_any_of(Code &&code, Others &&... others) const noexcept {
             return is(std::forward<Code>(code)) || (is(std::forward<Others>(others)) || ...);
+            // return (is(std::forward<Code>(code)) || ... || is(std::forward<Others>(others)));
         }
 
         friend void swap(Error &lhs, Error &rhs) noexcept {
@@ -372,11 +395,11 @@ namespace error_utils {
 
 
     // Define common result types using std::expected
-    template <typename T>
+    template <typename T = void>
     using Result = std::expected<T, Error>;
 
     // Common result type aliases
-    using VoidResult = Result<void>;
+    using VoidResult = Result<>;
     using StringResult = Result<std::string>;
     using IntResult = Result<int>;
     using BoolResult = Result<bool>;
@@ -400,69 +423,70 @@ namespace error_utils {
     template <typename T>
     [[nodiscard]] Result<T> make_error(const std::regex_constants::error_type code,
                                        const std::string_view context = {}) {
-        std::errc ec{};
-        const char *detailed_msg{};
+        auto create_unexpected = [&context](const std::errc &err_code, const std::string_view msg) {
+            return std::unexpected(Error{err_code, context.empty() ? msg : std::format("{}: {}", context, msg)});
+        };
+
+        // Map regex error codes to std::error_code
         switch (code) {
             case std::regex_constants::error_collate:
-                detailed_msg = "Regex error: invalid collating element name";
-                ec = std::errc::invalid_argument;
-                break;
-            case std::regex_constants::error_ctype:
-                detailed_msg = "Regex error: invalid character class name";
-                ec = std::errc::invalid_argument;
-                break;
-            case std::regex_constants::error_escape:
-                detailed_msg = "Regex error: invalid escaped character or a trailing escape";
-                ec = std::errc::invalid_argument;
-                break;
-            case std::regex_constants::error_backref:
-                detailed_msg = "Regex error: invalid back reference";
-                ec = std::errc::invalid_argument;
-                break;
-            case std::regex_constants::error_brack:
-                detailed_msg = "Regex error: mismatched square brackets ('[' and ']')";
-                ec = std::errc::invalid_argument;
-                break;
-            case std::regex_constants::error_paren:
-                detailed_msg = "Regex error: mismatched parentheses ('(' and ')')";
-                ec = std::errc::invalid_argument;
-                break;
-            case std::regex_constants::error_brace:
-                detailed_msg = "Regex error: mismatched curly braces ('{' and '}')";
-                ec = std::errc::invalid_argument;
-                break;
-            case std::regex_constants::error_badbrace:
-                detailed_msg = "Regex error: invalid range in a {} expression";
-                ec = std::errc::invalid_argument;
-                break;
-            case std::regex_constants::error_range:
-                detailed_msg = "Regex error: invalid character range";
-                ec = std::errc::invalid_argument;
-                break;
-            case std::regex_constants::error_space:
-                detailed_msg = "Regex error: insufficient memory to convert the expression into a finite state machine";
-                ec = std::errc::not_enough_memory;
-                break;
-            case std::regex_constants::error_badrepeat:
-                detailed_msg = "Regex error: '*', '?', '+' or '{' was not preceded by a valid regular expression";
-                ec = std::errc::invalid_argument;
-                break;
-            case std::regex_constants::error_complexity:
-                detailed_msg = "Regex error: the complexity of an attempted match exceeded a predefined level";
-                ec = std::errc::result_out_of_range;
-                break;
-            case std::regex_constants::error_stack:
-                detailed_msg = "Regex error: insufficient memory to perform a match";
-                ec = std::errc::not_enough_memory;
-                break;
-            default:
-                detailed_msg = "Regex error: unknown error";
-                ec = std::errc::invalid_argument;
-                break;
-        }
+                return create_unexpected(std::errc::invalid_argument,
+                                         "Regex error: invalid collating element name");
 
-        const std::string full_context = context.empty() ? detailed_msg : std::string(context) + ": " + detailed_msg;
-        return std::unexpected(Error{ec, full_context});
+            case std::regex_constants::error_ctype:
+                return create_unexpected(std::errc::invalid_argument,
+                                         "Regex error: invalid character class name");
+
+            case std::regex_constants::error_escape:
+                return create_unexpected(std::errc::invalid_argument,
+                                         "Regex error: invalid escaped character or a trailing escape");
+
+            case std::regex_constants::error_backref:
+                return create_unexpected(std::errc::invalid_argument,
+                                         "Regex error: invalid back reference");
+
+            case std::regex_constants::error_brack:
+                return create_unexpected(std::errc::invalid_argument,
+                                         "Regex error: mismatched square brackets ('[' and ']')");
+
+            case std::regex_constants::error_paren:
+                return create_unexpected(std::errc::invalid_argument,
+                                         "Regex error: mismatched parentheses ('(' and ')')");
+
+            case std::regex_constants::error_brace:
+                return create_unexpected(std::errc::invalid_argument,
+                                         "Regex error: mismatched curly braces ('{' and '}')");
+
+            case std::regex_constants::error_badbrace:
+                return create_unexpected(std::errc::invalid_argument,
+                                         "Regex error: invalid range in a {} expression");
+
+            case std::regex_constants::error_range:
+                return create_unexpected(std::errc::invalid_argument,
+                                         "Regex error: invalid character range");
+
+            case std::regex_constants::error_space:
+                return create_unexpected(std::errc::not_enough_memory,
+                                         "Regex error: insufficient memory to convert the expression"
+                                         " into a finite state machine");
+
+            case std::regex_constants::error_badrepeat:
+                return create_unexpected(std::errc::invalid_argument,
+                                         "Regex error: '*', '?', '+' or '{' was not preceded"
+                                         " by a valid regular expression");
+
+            case std::regex_constants::error_complexity:
+                return create_unexpected(std::errc::result_out_of_range,
+                                         "Regex error: the complexity of an attempted match"
+                                         " exceeded a predefined level");
+
+            case std::regex_constants::error_stack:
+                return create_unexpected(std::errc::not_enough_memory,
+                                         "Regex error: insufficient memory to perform a match");
+
+            default:
+                return create_unexpected(std::errc::invalid_argument, "Regex error: unknown error");
+        }
     }
 
     /// Retrieve the last system error code and reset \p errno.
@@ -508,8 +532,22 @@ namespace error_utils {
         }
     }
 
+    /// Execute a function that may set \p errno, capturing the result and any error.
+    ///
+    /// This function is intended for use with system calls that return an integer result,
+    /// where a return value of -1 indicates an error.
+    ///
+    /// \param func Function that may set errno. Expected to return an integral type convertible to int.
+    /// \tparam Func Type of the function to execute
+    /// \param error_context Context to use if an error occurs
+    /// \return Result of the function or an error if errno was set
+    /// \note The \p errno value is reset before and after the function call.
+    /// \note The function must be \p noexcept to ensure that it does not throw exceptions.
+    /// \note Notice that the function must be invocable with no arguments.
+
+    /// Use a lambda or \p std::bind to wrap the function.
     template <typename Func>
-        requires std::is_nothrow_invocable_v<Func> // most syscalls are noexcept
+        requires std::is_nothrow_invocable_v<Func>
     IntResult invoke_with_syscall_api(Func &&func, const std::string_view error_context = {}) noexcept {
         using R = std::invoke_result_t<Func>;
         static_assert(std::is_integral_v<R> && std::convertible_to<R, int>,
@@ -532,8 +570,9 @@ namespace error_utils {
     /// \return Result of the function or an error from caught exceptions
     template <typename Func, typename R = std::invoke_result_t<Func>>
     [[nodiscard]] auto try_catch(Func &&func, std::string_view context = {}) -> Result<R> {
-        auto format_message = [&context](auto &&default_msg) -> std::string {
-            return context.empty() ? default_msg : std::format("{}: {}", context, default_msg);
+        auto create_error = [&context]<typename T>(T &&code, const std::string_view default_msg) -> Result<R> {
+            return make_error<R>(std::forward<T>(code),
+                                 context.empty() ? default_msg : std::format("{}: {}", context, default_msg));
         };
 
         try {
@@ -541,61 +580,61 @@ namespace error_utils {
 
             // Logic errors
         } catch (const std::invalid_argument &e) {
-            return make_error<R>(ExtraError::invalid_argument, format_message(e.what()));
+            return create_error(ExtraError::invalid_argument, e.what());
         } catch (const std::domain_error &e) {
-            return make_error<R>(std::errc::argument_out_of_domain, format_message(e.what()));
+            return create_error(std::errc::argument_out_of_domain, e.what());
         } catch (const std::length_error &e) {
-            return make_error<R>(ExtraError::length_error, format_message(e.what()));
+            return create_error(ExtraError::length_error, e.what());
         } catch (const std::out_of_range &e) {
-            return make_error<R>(std::errc::result_out_of_range, format_message(e.what()));
+            return create_error(std::errc::result_out_of_range, e.what());
         } catch (const std::future_error &e) {
-            return make_error<R>(e.code(), format_message(e.what()));
+            return create_error(e.code(), e.what());
 
             // Runtime errors
         } catch (const std::range_error &e) {
-            return make_error<R>(std::errc::result_out_of_range, format_message(e.what()));
+            return create_error(std::errc::result_out_of_range, e.what());
         } catch (const std::overflow_error &e) {
-            return make_error<R>(std::errc::value_too_large, format_message(e.what()));
+            return create_error(std::errc::value_too_large, e.what());
         } catch (const std::underflow_error &e) {
-            return make_error<R>(ExtraError::value_too_small, format_message(e.what()));
+            return create_error(ExtraError::value_too_small, e.what());
         } catch (const std::regex_error &e) {
-            return make_error<R>(e.code(), format_message(e.what()));
+            return create_error(e.code(), e.what());
         } catch (const std::system_error &e) {
-            return make_error<R>(e.code(), format_message(e.what()));
+            return create_error(e.code(), e.what());
         } catch (const std::chrono::nonexistent_local_time &e) {
-            return make_error<R>(ExtraError::nonexistent_local_time, format_message(e.what()));
+            return create_error(ExtraError::nonexistent_local_time, e.what());
         } catch (const std::chrono::ambiguous_local_time &e) {
-            return make_error<R>(ExtraError::ambiguous_local_time, format_message(e.what()));
+            return create_error(ExtraError::ambiguous_local_time, e.what());
         } catch (const std::format_error &e) {
-            return make_error<R>(ExtraError::format_error, format_message(e.what()));
+            return create_error(ExtraError::format_error, e.what());
 
             // Resource and type errors
         } catch (const std::bad_alloc &e) {
-            return make_error<R>(ExtraError::bad_alloc, format_message(e.what()));
+            return create_error(ExtraError::bad_alloc, e.what());
         } catch (const std::bad_typeid &e) {
-            return make_error<R>(ExtraError::bad_typeid, format_message(e.what()));
+            return create_error(ExtraError::bad_typeid, e.what());
         } catch (const std::bad_cast &e) {
-            return make_error<R>(ExtraError::bad_cast, format_message(e.what()));
+            return create_error(ExtraError::bad_cast, e.what());
 
             // Container and value access errors
         } catch (const std::bad_optional_access &e) {
-            return make_error<R>(ExtraError::bad_optional_access, format_message(e.what()));
+            return create_error(ExtraError::bad_optional_access, e.what());
         } catch (const std::bad_expected_access<void> &e) {
-            return make_error<R>(ExtraError::bad_expected_access, format_message(e.what()));
+            return create_error(ExtraError::bad_expected_access, e.what());
         } catch (const std::bad_variant_access &e) {
-            return make_error<R>(ExtraError::bad_variant_access, format_message(e.what()));
+            return create_error(ExtraError::bad_variant_access, e.what());
         } catch (const std::bad_weak_ptr &e) {
-            return make_error<R>(ExtraError::bad_weak_ptr, format_message(e.what()));
+            return create_error(ExtraError::bad_weak_ptr, e.what());
         } catch (const std::bad_function_call &e) {
-            return make_error<R>(ExtraError::bad_function_call, format_message(e.what()));
+            return create_error(ExtraError::bad_function_call, e.what());
         } catch (const std::bad_exception &e) {
-            return make_error<R>(ExtraError::bad_exception, format_message(e.what()));
+            return create_error(ExtraError::bad_exception, e.what());
 
             // Catch-all for any other exceptions
         } catch (const std::exception &e) {
-            return make_error<R>(ExtraError::exception, format_message(e.what()));
+            return create_error(ExtraError::exception, e.what());
         } catch (...) {
-            return make_error<R>(ExtraError::unknown_exception, context);
+            return create_error(ExtraError::unknown_exception, "Unknown exception");
         }
     }
 
@@ -604,23 +643,46 @@ namespace error_utils {
     /// \return First successful result or combined error
     template <typename T>
     [[nodiscard]] Result<T> first_of(std::initializer_list<Result<T>> results) {
-        std::string combined_errors;
+        std::ostringstream combined_errors;
 
         for (const auto &result : results) {
             if (result) {
                 return result;
             }
-            if (!combined_errors.empty()) {
-                combined_errors += "; ";
+            if (combined_errors.tellp() > 0) {
+                combined_errors << "; ";
             }
-            combined_errors += result.error().message();
+            combined_errors << result.error().message();
         }
 
-        return make_error<T>(std::errc::io_error, combined_errors);
+        return make_error<T>(std::errc::io_error, combined_errors.str());
     }
+} // namespace error_utils
+
+namespace std {
+    template <>
+    struct formatter<error_utils::Error> {
+        static constexpr auto parse(format_parse_context &ctx) {
+            return ctx.begin();
+        }
+
+        static auto format(const error_utils::Error &error, format_context &ctx) {
+            return format_to(ctx.out(), "{} \n(error_code: {}, category: {})",
+                             error.message(), error.value(), error.category().name());
+        }
+    };
+
+    template <>
+    struct hash<error_utils::Error> {
+        size_t operator()(const error_utils::Error &error) const noexcept {
+            return hash<error_code>{}(error.error_code());
+        }
+    };
 }
 
-// Common result type aliases
+
+// ///////////////////////// Common Result Type Aliases /////////////////////////
+
 using error_utils::Result;
 using error_utils::VoidResult;
 using error_utils::StringResult;
