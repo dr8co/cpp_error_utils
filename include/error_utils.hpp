@@ -203,7 +203,7 @@ enum class ExtraErrorCondition {
             }
         };
 
-        /// This function provides a singleton instance of the \p ExtraErrorCategory class,
+        /// This function provides a singleton instance of the \p ExtraErrorCategory class.
         /// @return A singleton reference to the \p ExtraError error category.
         inline const std::error_category &extra_error_category() {
             static ExtraErrorCategory instance;
@@ -267,24 +267,24 @@ namespace error_utils {
         std::error_code error_code_{};
 
     public:
-        Error() = default;
+        constexpr Error() noexcept = default;
 
         /// Create an error with the specified error code and optional context.
         /// \param code The system error code
         /// \param context Additional context information about the error
-        explicit Error(const std::error_code &code, const std::string_view context = {})
+        constexpr explicit Error(const std::error_code &code, const std::string_view context = {})
             : context_{context}, error_code_{code} {}
 
-        explicit Error(const detail::convertible_to_error_code auto code, const std::string_view context = {})
+        constexpr explicit Error(const detail::convertible_to_error_code auto code, const std::string_view context = {})
             : context_{context}, error_code_{make_error_code(code)} {}
 
-        Error(const Error &other) = default;
+        constexpr Error(const Error &other) noexcept = default;
 
-        Error(Error &&other) noexcept
+        constexpr Error(Error &&other) noexcept
             : context_{std::move(other.context_)},
               error_code_{other.error_code_} {}
 
-        Error &operator=(const Error &other) {
+        constexpr Error &operator=(const Error &other) {
             if (this == &other)
                 return *this;
             context_ = other.context_;
@@ -292,7 +292,7 @@ namespace error_utils {
             return *this;
         }
 
-        Error &operator=(Error &&other) noexcept {
+        constexpr Error &operator=(Error &&other) noexcept {
             if (this == &other)
                 return *this;
             context_ = std::move(other.context_);
@@ -300,7 +300,7 @@ namespace error_utils {
             return *this;
         }
 
-        ~Error() = default;
+        ~Error() noexcept = default;
 
         constexpr friend bool operator==(const Error &lhs, const Error &rhs) noexcept {
             return lhs.error_code_ == rhs.error_code_;
@@ -330,7 +330,7 @@ namespace error_utils {
         }
 
         /// Implicit conversion to bool, indicating whether an error exists.
-        [[nodiscard]] explicit operator bool() const noexcept {
+        [[nodiscard]] constexpr explicit operator bool() const noexcept {
             return error_code_.operator bool();
         }
 
@@ -339,19 +339,19 @@ namespace error_utils {
 
         /// Get the underlying error code.
         /// \return The error code
-        [[nodiscard]] const std::error_code &error_code() const noexcept { return error_code_; }
+        [[nodiscard]] constexpr const std::error_code &error_code() const noexcept { return error_code_; }
 
-        [[nodiscard]] const std::string &context() const noexcept { return context_; }
+        [[nodiscard]] constexpr const std::string &context() const noexcept { return context_; }
 
-        [[nodiscard]] int value() const noexcept { return error_code_.value(); }
+        [[nodiscard]] constexpr int value() const noexcept { return error_code_.value(); }
 
-        [[nodiscard]] const std::error_category &category() const noexcept {
+        [[nodiscard]] constexpr const std::error_category &category() const noexcept {
             return error_code_.category();
         }
 
         /// Get the error message including context if available.
         /// \return Formatted error message
-        [[nodiscard]] std::string message() const {
+        [[nodiscard]] constexpr std::string message() const {
             if (context_.empty()) {
                 return error_code_.message();
             }
@@ -363,12 +363,12 @@ namespace error_utils {
         /// \return True if the error matches the specified code
         template <typename T>
             requires detail::convertible_to_error_code<T>
-        [[nodiscard]] bool is(T &&code) const noexcept {
+        [[nodiscard]] constexpr bool is(T &&code) const noexcept {
             using std::make_error_code;
             return error_code_ == make_error_code(std::forward<T>(code));
         }
 
-        [[nodiscard]] bool is(const std::error_code &code) const noexcept {
+        [[nodiscard]] constexpr bool is(const std::error_code &code) const noexcept {
             return error_code_ == code;
         }
 
@@ -381,12 +381,12 @@ namespace error_utils {
         template <typename Code, typename... Others>
             requires (detail::convertible_to_error_code<Code> || std::is_same_v<Code, std::error_code>) &&
             ((detail::convertible_to_error_code<Others> || std::is_same_v<Code, std::error_code>) && ...)
-        [[nodiscard]] bool is_any_of(Code &&code, Others &&... others) const noexcept {
+        [[nodiscard]] constexpr bool is_any_of(Code &&code, Others &&... others) const noexcept {
             return is(std::forward<Code>(code)) || (is(std::forward<Others>(others)) || ...);
             // return (is(std::forward<Code>(code)) || ... || is(std::forward<Others>(others)));
         }
 
-        friend void swap(Error &lhs, Error &rhs) noexcept {
+        constexpr friend void swap(Error &lhs, Error &rhs) noexcept {
             using std::swap;
             swap(lhs.context_, rhs.context_);
             swap(lhs.error_code_, rhs.error_code_);
@@ -409,20 +409,20 @@ namespace error_utils {
     /// \param code The error code
     /// \param context Optional context information
     /// \return An unexpected result with the error
-    template <typename T, typename E>
+    template <typename T, typename E, typename Ctx = std::string_view>
         requires detail::convertible_to_error_code<E>
-    [[nodiscard]] Result<T> make_error(E &&code, const std::string_view context = {}) {
-        return std::unexpected(Error{std::forward<E>(code), context});
+    [[nodiscard]] constexpr Result<T> make_error(E &&code, Ctx &&context = {}) {
+        return std::unexpected(Error{std::forward<E>(code), std::forward<Ctx>(context)});
     }
 
     template <typename T>
-    [[nodiscard]] Result<T> make_error(const std::error_code &code, const std::string_view context = {}) {
+    [[nodiscard]] constexpr Result<T> make_error(const std::error_code &code, const std::string_view context = {}) {
         return std::unexpected(Error{code, context});
     }
 
     template <typename T>
-    [[nodiscard]] Result<T> make_error(const std::regex_constants::error_type code,
-                                       const std::string_view context = {}) {
+    [[nodiscard]] constexpr Result<T> make_error(const std::regex_constants::error_type code,
+                                                 const std::string_view context = {}) {
         auto create_unexpected = [&context](const std::errc &err_code, const std::string_view msg) {
             return std::unexpected(Error{err_code, context.empty() ? msg : std::format("{}: {}", context, msg)});
         };
@@ -513,7 +513,7 @@ namespace error_utils {
     /// \param error_context Context to use if an error occurs
     /// \return Result of the function or an error if errno was set
     template <typename Func, typename R = std::invoke_result_t<Func>>
-    auto with_errno(Func &&func, const std::string_view error_context = {}) -> Result<R> {
+    [[nodiscard]] auto with_errno(Func &&func, const std::string_view error_context = {}) -> Result<R> {
         // Reset errno before calling the function to avoid side effects
         errno = 0;
 
@@ -548,7 +548,7 @@ namespace error_utils {
     /// Use a lambda or \p std::bind to wrap the function.
     template <typename Func>
         requires std::is_nothrow_invocable_v<Func>
-    IntResult invoke_with_syscall_api(Func &&func, const std::string_view error_context = {}) noexcept {
+    [[nodiscard]] IntResult invoke_with_syscall_api(Func &&func, const std::string_view error_context = {}) noexcept {
         using R = std::invoke_result_t<Func>;
         static_assert(std::is_integral_v<R> && std::convertible_to<R, int>,
                       "func must return an integral type convertible to int");
@@ -569,7 +569,7 @@ namespace error_utils {
     /// \param context Error context
     /// \return Result of the function or an error from caught exceptions
     template <typename Func, typename R = std::invoke_result_t<Func>>
-    [[nodiscard]] auto try_catch(Func &&func, std::string_view context = {}) -> Result<R> {
+    [[nodiscard]] constexpr auto try_catch(Func &&func, std::string_view context = {}) -> Result<R> {
         auto create_error = [&context]<typename T>(T &&code, const std::string_view default_msg) -> Result<R> {
             return make_error<R>(std::forward<T>(code),
                                  context.empty() ? default_msg : std::format("{}: {}", context, default_msg));
@@ -642,7 +642,7 @@ namespace error_utils {
     /// \param results Multiple results of the same type
     /// \return First successful result or combined error
     template <typename T>
-    [[nodiscard]] Result<T> first_of(std::initializer_list<Result<T>> results) {
+    [[nodiscard]] constexpr Result<T> first_of(std::initializer_list<Result<T>> results) {
         std::ostringstream combined_errors;
 
         for (const auto &result : results) {
@@ -655,7 +655,7 @@ namespace error_utils {
             combined_errors << result.error().message();
         }
 
-        return make_error<T>(std::errc::io_error, combined_errors.str());
+        return make_error<T>(ExtraError::unknown_exception, combined_errors.str());
     }
 } // namespace error_utils
 

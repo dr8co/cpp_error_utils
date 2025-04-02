@@ -160,7 +160,7 @@ Result<std::vector<int>> read_numbers_from_file(const std::string &filename) {
         auto num_result = parse_number(line);
         if (!num_result) {
             return error_utils::make_error<std::vector<int>>(
-                num_result.error().eror_code(),
+                num_result.error().error_code(),
                 std::format("Line '{}': {}", line, num_result.error().message())
             );
         }
@@ -200,7 +200,7 @@ void example_with_try_catch() {
     });
 
     if (!res1) {
-        auto err = res1.error().eror_code();
+        auto err = res1.error().error_code();
         std::println("\tError occurred: {} (code: {}).", res1.error().message(), err.value());
 
         // Check against a specific error
@@ -220,7 +220,7 @@ void example_with_try_catch() {
     });
 
     if (!res2) {
-        auto err = res2.error().eror_code();
+        auto err = res2.error().error_code();
         std::println("\tError occurred: {} (code: {})", res2.error().message(), err.value());
 
         // Check against error condition
@@ -237,7 +237,7 @@ void example_with_try_catch() {
     });
 
     if (!res3) {
-        auto err = res3.error().eror_code();
+        auto err = res3.error().error_code();
         std::println("\tError occurred: {} (code: {})", res3.error().message(), err.value());
 
         // Check against error condition
