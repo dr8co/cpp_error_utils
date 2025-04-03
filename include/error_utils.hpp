@@ -12,6 +12,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <utility>
 
 
 // ///////////////////////// Error Codes, Conditions, and Categories ///////////////////////
@@ -30,31 +31,31 @@ namespace error_utils {
 /// with \p std::error_code and \p std::error_condition
 enum class ExtraError {
     // Logic errors (std::logic_error exceptions)
-    invalid_argument = 1,    ///< std::invalid_argument exception
-    length_error,            ///< std::length_error exception
+    invalid_argument = 1,    ///< std::invalid_argument exception.
+    length_error,            ///< std::length_error exception.
 
     // Runtime errors (std::runtime_error exceptions)
-    value_too_small,         ///< std::underflow_error exception
-    nonexistent_local_time,  ///< std::chrono::nonexistent_local_time exception
-    ambiguous_local_time,    ///< std::chrono::ambiguous_local_time exception
-    format_error,            ///< std::format_error exception
+    value_too_small,         ///< std::underflow_error exception.
+    nonexistent_local_time,  ///< std::chrono::nonexistent_local_time exception.
+    ambiguous_local_time,    ///< std::chrono::ambiguous_local_time exception.
+    format_error,            ///< std::format_error exception.
 
     // Resource and type exceptions
-    bad_alloc,               ///< std::bad_alloc exception
-    bad_typeid,              ///< std::bad_typeid exception
-    bad_cast,                ///< std::bad_cast exception
+    bad_alloc,               ///< std::bad_alloc exception.
+    bad_typeid,              ///< std::bad_typeid exception.
+    bad_cast,                ///< std::bad_cast exception.
 
     // Container and value access exceptions
-    bad_optional_access,     ///< std::bad_optional_access exception
-    bad_expected_access,     ///< std::bad_expected_access exception
-    bad_variant_access,      ///< std::bad_variant_access exception
-    bad_weak_ptr,            ///< std::bad_weak_ptr exception
-    bad_function_call,       ///< std::bad_function_call exception
+    bad_optional_access,     ///< std::bad_optional_access exception.
+    bad_expected_access,     ///< std::bad_expected_access exception.
+    bad_variant_access,      ///< std::bad_variant_access exception.
+    bad_weak_ptr,            ///< std::bad_weak_ptr exception.
+    bad_function_call,       ///< std::bad_function_call exception.
 
     // Other exceptions
-    bad_exception,           ///< std::bad_exception exception
-    exception,               ///< all std::exception exceptions
-    unknown_exception,       ///< catch-all for any other exceptions
+    bad_exception,           ///< std::bad_exception exception.
+    exception,               ///< all std::exception exceptions.
+    unknown_exception,       ///< catch-all for any other exceptions.
 };
 
 
@@ -63,11 +64,11 @@ enum class ExtraError {
 /// This enumeration defines broad categories of errors that can occur in the system,
 /// which are used to group specific error codes into more general error conditions.
 enum class ExtraErrorCondition {
-    logic_error = 1, ///< Errors related to program logic and invalid operations.
-    runtime_error,   ///< Errors occurring during program execution.
-    resource_error,  ///< Errors related to resource allocation and management.
-    access_error,    ///< Errors related to invalid access of data structures.
-    other_error,     ///< Other errors that do not fit into the above categories.
+    logic_error = 1,        ///< Errors related to program logic and invalid operations.
+    runtime_error,          ///< Errors occurring during program execution.
+    resource_error,         ///< Errors related to resource allocation and management.
+    access_error,           ///< Errors related to invalid access of data structures.
+    other_error,            ///< Other errors that do not fit into the above categories.
 };
 
     // clang-format on
@@ -170,33 +171,33 @@ enum class ExtraErrorCondition {
             /// \return The corresponding error condition.
             [[nodiscard]] std::error_condition default_error_condition(int ev) const noexcept override {
                 switch (static_cast<ExtraError>(ev)) {
-                    case ExtraError::invalid_argument:
+                    case ExtraError::invalid_argument: [[fallthrough]];
                     case ExtraError::length_error:
                         return {static_cast<int>(ExtraErrorCondition::logic_error), extra_error_condition_category()};
 
-                    case ExtraError::value_too_small:
-                    case ExtraError::nonexistent_local_time:
-                    case ExtraError::ambiguous_local_time:
+                    case ExtraError::value_too_small: [[fallthrough]];
+                    case ExtraError::nonexistent_local_time: [[fallthrough]];
+                    case ExtraError::ambiguous_local_time: [[fallthrough]];
                     case ExtraError::format_error:
                         return {static_cast<int>(ExtraErrorCondition::runtime_error), extra_error_condition_category()};
 
-                    case ExtraError::bad_alloc:
-                    case ExtraError::bad_typeid:
+                    case ExtraError::bad_alloc: [[fallthrough]];
+                    case ExtraError::bad_typeid: [[fallthrough]];
                     case ExtraError::bad_cast:
                         return {
                             static_cast<int>(ExtraErrorCondition::resource_error), extra_error_condition_category()
                         };
 
-                    case ExtraError::bad_optional_access:
-                    case ExtraError::bad_expected_access:
-                    case ExtraError::bad_variant_access:
-                    case ExtraError::bad_weak_ptr:
+                    case ExtraError::bad_optional_access: [[fallthrough]];
+                    case ExtraError::bad_expected_access: [[fallthrough]];
+                    case ExtraError::bad_variant_access: [[fallthrough]];
+                    case ExtraError::bad_weak_ptr: [[fallthrough]];
                     case ExtraError::bad_function_call:
                         return {static_cast<int>(ExtraErrorCondition::access_error), extra_error_condition_category()};
 
-                    case ExtraError::bad_exception:
-                    case ExtraError::exception:
-                    case ExtraError::unknown_exception:
+                    case ExtraError::bad_exception: [[fallthrough]];
+                    case ExtraError::exception: [[fallthrough]];
+                    case ExtraError::unknown_exception: [[fallthrough]];
                     default:
                         return {static_cast<int>(ExtraErrorCondition::other_error), extra_error_condition_category()};
                 }
@@ -259,6 +260,15 @@ namespace error_utils {
         template <typename T>
         concept convertible_to_error_code = (std::is_error_condition_enum_v<T> || std::is_error_code_enum_v<T>) &&
             requires { { make_error_code(std::declval<T>()) } -> std::same_as<std::error_code>; };
+
+        template <typename T>
+        concept directly_convertible_to_error_condition = requires {
+            { make_error_condition(std::declval<T>()) } -> std::same_as<std::error_condition>;
+        };
+
+        template <typename T>
+        concept comparable_to_error_code = convertible_to_error_code<T> || std::is_same_v<T, std::error_code> ||
+            std::is_same_v<T, std::error_condition> || directly_convertible_to_error_condition<T>;
     } // namespace detail
 
     /// A wrapper class for system error codes with additional context.
@@ -362,14 +372,21 @@ namespace error_utils {
         /// \param code The error code to check against
         /// \return True if the error matches the specified code
         template <typename T>
-            requires detail::convertible_to_error_code<T>
+            requires detail::comparable_to_error_code<T>
         [[nodiscard]] constexpr bool is(T &&code) const noexcept {
-            using std::make_error_code;
-            return error_code_ == make_error_code(std::forward<T>(code));
-        }
+            if constexpr (std::is_same_v<T, Error> || std::is_same_v<T, std::error_code> ||
+                std::is_same_v<T, std::error_condition>) {
+                // operator== is defined for these types
+                return code == *this;
+            } else if constexpr (detail::convertible_to_error_code<T>) {
+                using std::make_error_code;
+                return error_code_ == make_error_code(std::forward<T>(code));
+            } else if constexpr (detail::directly_convertible_to_error_condition<T>) {
+                using std::make_error_condition;
+                return error_code_ == make_error_condition(std::forward<T>(code));
+            } else static_assert(false, "Should be unreachable.");
 
-        [[nodiscard]] constexpr bool is(const std::error_code &code) const noexcept {
-            return error_code_ == code;
+            std::unreachable();
         }
 
         /// Check if the error belongs to any of the specified error codes.
@@ -379,8 +396,7 @@ namespace error_utils {
         /// \tparam Others The types of the other error codes
         /// \return True if the error matches any of the specified codes
         template <typename Code, typename... Others>
-            requires (detail::convertible_to_error_code<Code> || std::is_same_v<Code, std::error_code>) &&
-            ((detail::convertible_to_error_code<Others> || std::is_same_v<Code, std::error_code>) && ...)
+            requires detail::comparable_to_error_code<Code> && (detail::comparable_to_error_code<Others> && ...)
         [[nodiscard]] constexpr bool is_any_of(Code &&code, Others &&... others) const noexcept {
             return is(std::forward<Code>(code)) || (is(std::forward<Others>(others)) || ...);
             // return (is(std::forward<Code>(code)) || ... || is(std::forward<Others>(others)));

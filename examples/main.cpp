@@ -278,7 +278,10 @@ bool is_file_access_error(const error_utils::Error &error) {
         std::errc::permission_denied,
         std::errc::no_such_file_or_directory,
         std::errc::file_exists,
-        std::errc::is_a_directory
+        ExtraError::invalid_argument,
+        make_error_code(ExtraError::invalid_argument),
+        ExtraErrorCondition::access_error,
+        make_error_condition(ExtraErrorCondition::other_error)
     );
 }
 
