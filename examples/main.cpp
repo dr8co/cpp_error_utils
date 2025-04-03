@@ -317,16 +317,25 @@ int main() {
     }
 
     std::println("Parsing 123abc:");
-    if (auto int_result = parse_positive_number("123abc")) {
-        std::println("\tParsed number: {}", int_result.value());
-    } else {
-        std::println("\tError: {}.", int_result.error().message());
 
-        // Check for a specific error type
-        if (int_result.error().is(std::errc::invalid_argument)) {
-            std::println("\tThis was an invalid argument error!");
-        }
-    }
+    // Monadic operations
+    auto int_result = parse_positive_number("123abc")
+                      // Success path
+                      .and_then([](int res) -> VoidResult {
+                          std::println("\tParsed number: {}", res);
+                          return {}; // Success
+                      })
+                      // Failure path
+                      .or_else([](const error_utils::Error &err) -> VoidResult {
+                          std::println("\tError: {}.", err.message());
+
+                          // Check for a specific error type
+                          if (err.is(std::errc::invalid_argument)) {
+                              std::println("\tThis was an invalid argument error!");
+                          }
+
+                          return {};
+                      });
 
     // Example 4: Using try_catch wrapper
     std::println("\n=== Example 4: Using try_catch wrapper ===");
@@ -338,11 +347,15 @@ int main() {
 
     // Example 5: Function that returns void or error
     std::println("\n=== Example 5: Function that returns void or error ===");
-    if (auto dir_result = create_directory("/root/secured")) {
-        std::println("Directory created successfully");
-    } else {
-        std::println("Error: {}.", dir_result.error().message());
-    }
+    auto dir_result = create_directory("/root/secured")
+                      .and_then([]-> VoidResult {
+                          std::println("Directory created successfully");
+                          return {};
+                      })
+                      .or_else([](const error_utils::Error &error) -> Result<void> {
+                          std::println("Error: {}.", error.message());
+                          return {};
+                      });
 
     // Example 6: Using invoke_with_syscall_api() for C API
     std::println("\n=== Example 6: Using invoke_with_syscall_api() for C API ===");
