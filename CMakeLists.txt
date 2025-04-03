@@ -45,3 +45,7 @@ if (CPP_ERR_BUILD_DOC)
     add_subdirectory(doc)
 endif ()
 
+if (CPP_ERR_BUILD_TESTING)
+    add_subdirectory(tests)
+endif ()
+
