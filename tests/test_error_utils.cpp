@@ -14,6 +14,47 @@ TEST(ErrorTest, DefaultConstruction) {
     EXPECT_EQ(error.message(), "Success");
 }
 
+TEST(ErrorTest, CopyConstruction) {
+    const Error original(std::make_error_code(std::errc::invalid_argument), "test");
+    const Error copy(original);
+    EXPECT_EQ(copy.value(), original.value());
+    EXPECT_EQ(copy.message(), original.message());
+    EXPECT_EQ(copy.context(), original.context());
+}
+
+TEST(ErrorTest, MoveConstruction) {
+    Error original(std::make_error_code(std::errc::invalid_argument), "test");
+    const Error moved(std::move(original));
+    EXPECT_EQ(moved.value(), static_cast<int>(std::errc::invalid_argument));
+    EXPECT_EQ(moved.message(), "test: Invalid argument");
+    EXPECT_TRUE(original.context().empty());
+}
+
+TEST(ErrorTest, CopyAssignment) {
+    const Error original(std::make_error_code(std::errc::invalid_argument), "test");
+    Error copy(std::make_error_code(std::errc::permission_denied), "other");
+    copy = original;
+    EXPECT_EQ(copy.value(), original.value());
+    EXPECT_EQ(copy.message(), original.message());
+    EXPECT_EQ(copy.context(), original.context());
+}
+
+TEST(ErrorTest, MoveAssignment) {
+    Error original(std::make_error_code(std::errc::invalid_argument), "test");
+    Error other(std::make_error_code(std::errc::permission_denied), "other");
+    other = std::move(original);
+    EXPECT_EQ(other.value(), static_cast<int>(std::errc::invalid_argument));
+    EXPECT_EQ(other.message(), "test: Invalid argument");
+    EXPECT_TRUE(original.context().empty());
+}
+
+TEST(ErrorTest, SelfAssignment) {
+    Error error(std::make_error_code(std::errc::invalid_argument), "test");
+    error = error;
+    EXPECT_EQ(error.value(), static_cast<int>(std::errc::invalid_argument));
+    EXPECT_EQ(error.message(), "test: Invalid argument");
+}
+
 // Test for Error class with error code and context
 TEST(ErrorTest, ConstructionWithErrorCodeAndContext) {
     const Error error(std::make_error_code(std::errc::invalid_argument), "Invalid argument provided");
@@ -69,6 +110,21 @@ TEST(ErrorTest, Comparison) {
 
     EXPECT_EQ(error4, error5); // Should compare equal based on error code only
     EXPECT_NE(error4, error6);
+}
+
+TEST(ErrorTest, ComparisonWithCondition) {
+    const Error error(std::make_error_code(std::errc::invalid_argument));
+    EXPECT_TRUE(error == std::errc::invalid_argument);
+    EXPECT_FALSE(error == std::errc::permission_denied);
+}
+
+TEST(ErrorTest, ComparisonOperatorOrder) {
+    const Error error1(std::make_error_code(std::errc::permission_denied));
+    const Error error2(std::make_error_code(std::errc::invalid_argument));
+    EXPECT_TRUE(error1 < error2);
+    EXPECT_FALSE(error2 < error1);
+    EXPECT_TRUE(error2 > error1);
+    EXPECT_FALSE(error1 > error2);
 }
 
 // Test operator=
@@ -172,6 +228,20 @@ TEST(MakeErrorFromErrnoTest, CreateErrorFromErrno) {
     EXPECT_EQ(result.error().value(), EPERM);
     EXPECT_EQ(result.error().message(), "Operation not permitted: Operation not permitted");
     EXPECT_EQ(errno, 0); // Ensure errno is reset
+}
+
+TEST(MakeErrorTest, CreateErrorWithLongContext) {
+    std::string long_context(1000, 'a');
+    auto result = make_error<int>(std::errc::invalid_argument, long_context);
+    EXPECT_FALSE(result);
+    EXPECT_EQ(result.error().context().length(), 1000);
+}
+
+TEST(MakeErrorTest, CreateErrorWithComplexErrorCode) {
+    const auto complex_error = std::make_error_code(std::io_errc::stream);
+    auto result = make_error<void>(complex_error, "IO Error");
+    EXPECT_FALSE(result);
+    EXPECT_EQ(result.error().error_code(), complex_error);
 }
 
 // Test for try_catch utility with no exception
@@ -369,6 +439,26 @@ TEST(TryCatchTest, GenericException) {
     EXPECT_EQ(result.error().message(), "std::exception: Exception caught");
 }
 
+TEST(TryCatchTest, NestedExceptions) {
+    auto result = try_catch([]() -> int {
+        try {
+            throw std::invalid_argument("Inner");
+        } catch (...) {
+            throw std::runtime_error("Outer");
+        }
+    });
+    EXPECT_FALSE(result);
+    EXPECT_TRUE(result.error().message().find("Outer") != std::string::npos);
+}
+
+TEST(TryCatchTest, VoidReturnType) {
+    const auto result = try_catch([] -> VoidResult {
+        /* do nothing */
+        return {};
+    });
+    EXPECT_TRUE(result);
+}
+
 // Test for with_errno utility
 TEST(WithErrnoTest, NoError) {
     const auto result = with_errno([] { return 42; });
@@ -469,6 +559,24 @@ TEST(FirstOfTest, AllSuccesses) {
     const auto combined = first_of({result1, result2, result3});
     EXPECT_TRUE(combined);
     EXPECT_EQ(combined.value(), 1);
+}
+
+TEST(FirstOfTest, EmptyList) {
+    const auto result = first_of<int>({});
+    EXPECT_FALSE(result);
+    EXPECT_EQ(result.error().message(), "No alternatives provided: Invalid argument");
+}
+
+TEST(FirstOfTest, SingleError) {
+    auto result = first_of({make_error<int>(std::errc::invalid_argument, "Single error")});
+    EXPECT_FALSE(result);
+    EXPECT_EQ(result.error().message(), "Single error: Invalid argument: Unknown exception caught");
+}
+
+TEST(FirstOfTest, SingleSuccess) {
+    const auto result = first_of({Result<int>(42)});
+    EXPECT_TRUE(result);
+    EXPECT_EQ(result.value(), 42);
 }
 
 TEST(StdFormatTest, ErrorFormat) {
