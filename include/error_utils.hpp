@@ -438,9 +438,16 @@ namespace error_utils {
 
     template <typename T>
     [[nodiscard]] constexpr Result<T> make_error(const std::regex_constants::error_type code,
-                                                 const std::string_view context = {}) {
+                                                 std::string_view context = {}) {
         auto create_unexpected = [&context](const std::errc &err_code, const std::string_view msg) {
-            return std::unexpected(Error{err_code, context.empty() ? msg : std::format("{}: {}", context, msg)});
+            if (context.ends_with("\x02")) {
+                context.remove_suffix(1);
+                return std::unexpected(Error{err_code, context});
+            }
+
+            return std::unexpected(Error{
+                err_code, context.empty() ? msg : std::format("{}: {}", context, msg)
+            });
         };
 
         // Map regex error codes to std::error_code
@@ -614,9 +621,9 @@ namespace error_utils {
         } catch (const std::underflow_error &e) {
             return create_error(ExtraError::value_too_small, e.what());
         } catch (const std::regex_error &e) {
-            return create_error(e.code(), e.what());
+            return create_error(e.code(), std::format("{}\x02", e.what()));
         } catch (const std::system_error &e) {
-            return create_error(e.code(), e.what());
+            return create_error(e.code(), ""); // e.what() will be deduced from the code
         } catch (const std::chrono::nonexistent_local_time &e) {
             return create_error(ExtraError::nonexistent_local_time, e.what());
         } catch (const std::chrono::ambiguous_local_time &e) {
