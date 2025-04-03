@@ -30,6 +30,30 @@ TEST(ErrorTest, ConstructionWithExtraError) {
     EXPECT_EQ(error.message(), "Allocation failed: Bad allocation exception");
 }
 
+// Test for Error class with empty context
+TEST(ErrorTest, ConstructionWithEmptyContext) {
+    const Error error(std::make_error_code(std::errc::invalid_argument), "");
+    EXPECT_TRUE(error);
+    EXPECT_EQ(error.value(), static_cast<int>(std::errc::invalid_argument));
+    EXPECT_EQ(error.message(), "Invalid argument");
+}
+
+// Test for Error class with unknown error code
+TEST(ErrorTest, ConstructionWithUnknownErrorCode) {
+    const Error error(static_cast<ExtraError>(999), "Unknown error");
+    EXPECT_TRUE(error);
+    EXPECT_EQ(error.value(), 999);
+    EXPECT_EQ(error.message(), "Unknown error: Unrecognized ExtraError");
+}
+
+// Test for Error class with null error code
+TEST(ErrorTest, ConstructionWithNullErrorCode) {
+    const Error error(std::error_code(), "No error");
+    EXPECT_FALSE(error);
+    EXPECT_EQ(error.value(), 0);
+    EXPECT_EQ(error.message(), "No error: Success");
+}
+
 // Test for Error comparison
 TEST(ErrorTest, Comparison) {
     const Error error1(std::make_error_code(std::errc::invalid_argument));
@@ -116,6 +140,14 @@ TEST(MakeErrorTest, CreateExtraError) {
     EXPECT_EQ(result.error().message(), "Allocation failed: Bad allocation exception");
 }
 
+// Test for make_error with empty context
+TEST(MakeErrorTest, CreateErrorWithEmptyContext) {
+    auto result = make_error<int>(std::errc::invalid_argument, "");
+    EXPECT_FALSE(result);
+    EXPECT_EQ(result.error().value(), static_cast<int>(std::errc::invalid_argument));
+    EXPECT_EQ(result.error().message(), "Invalid argument");
+}
+
 // make_error() should map regex errors
 TEST(MakeErrorTest, RegexErrorMapping) {
     auto result = make_error<void>(std::regex_constants::error_brack, "Mismatched brackets");
@@ -123,6 +155,14 @@ TEST(MakeErrorTest, RegexErrorMapping) {
     EXPECT_EQ(result.error().value(), static_cast<int>(std::errc::invalid_argument));
     EXPECT_EQ(result.error().message(),
               "Mismatched brackets: Regex error: mismatched square brackets ('[' and ']'): Invalid argument");
+}
+
+// Test for make_error with an unknown regex error
+TEST(MakeErrorTest, UnknownRegexErrorMapping) {
+    auto result = make_error<void>(static_cast<std::regex_constants::error_type>(999), "Unknown regex error");
+    EXPECT_FALSE(result);
+    EXPECT_EQ(result.error().value(), static_cast<int>(std::errc::invalid_argument));
+    EXPECT_EQ(result.error().message(), "Unknown regex error: Regex error: unknown error: Invalid argument");
 }
 
 TEST(MakeErrorFromErrnoTest, CreateErrorFromErrno) {
@@ -143,6 +183,16 @@ TEST(TryCatchTest, NoException) {
 
 // Test for try_catch utility with std::invalid_argument
 TEST(TryCatchTest, InvalidArgumentException) {
+    auto result = try_catch([]() -> int {
+        throw std::invalid_argument("Invalid argument");
+    }, "TryCatchTest");
+    EXPECT_FALSE(result);
+    EXPECT_EQ(result.error().value(), static_cast<int>(ExtraError::invalid_argument));
+    EXPECT_EQ(result.error().message(), "TryCatchTest: Invalid argument: Invalid argument exception");
+}
+
+// Test for try_catch with no context
+TEST(TryCatchTest, NoContext) {
     auto result = try_catch([]() -> int { throw std::invalid_argument("Invalid argument"); });
     EXPECT_FALSE(result);
     EXPECT_EQ(result.error().value(), static_cast<int>(ExtraError::invalid_argument));
@@ -350,9 +400,23 @@ TEST(WithErrnoTest, VoidReturnTypeError) {
     EXPECT_EQ(result.error().message(), "Operation failed: Permission denied");
 }
 
+// Test for with_errno with no error and empty context
+TEST(WithErrnoTest, NoErrorEmptyContext) {
+    const auto result = with_errno([] { return 42; }, "");
+    EXPECT_TRUE(result);
+    EXPECT_EQ(result.value(), 42);
+}
+
 // Test for invoke_with_syscall_api utility
 TEST(InvokeWithSyscallApiTest, NoError) {
     const auto result = invoke_with_syscall_api([]() noexcept { return 42; });
+    EXPECT_TRUE(result);
+    EXPECT_EQ(result.value(), 42);
+}
+
+// Test for invoke_with_syscall_api with no error and empty context
+TEST(InvokeWithSyscallApiTest, NoErrorEmptyContext) {
+    const auto result = invoke_with_syscall_api([]() noexcept { return 42; }, "");
     EXPECT_TRUE(result);
     EXPECT_EQ(result.value(), 42);
 }
@@ -394,6 +458,17 @@ TEST(FirstOfTest, AllErrors) {
               "First error: Invalid argument; Second error: Permission denied; Third error: "
               "Operation canceled: Unknown exception caught");
     EXPECT_EQ(combined.error().category().name(), "ExtraError");
+}
+
+// Test for first_of with all successes
+TEST(FirstOfTest, AllSuccesses) {
+    auto result1 = Result<int>(1);
+    auto result2 = Result<int>(2);
+    auto result3 = Result<int>(3);
+
+    const auto combined = first_of({result1, result2, result3});
+    EXPECT_TRUE(combined);
+    EXPECT_EQ(combined.value(), 1);
 }
 
 TEST(StdFormatTest, ErrorFormat) {
