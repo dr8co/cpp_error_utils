@@ -309,7 +309,7 @@ TEST(TryCatchTest, OverflowErrorException) {
     auto result = try_catch([]() -> int { throw std::overflow_error("Overflow error"); });
     EXPECT_FALSE(result);
     EXPECT_EQ(result.error().value(), static_cast<int>(std::errc::value_too_large));
-    EXPECT_EQ(result.error().message(), "Overflow error: Value too large for defined data type"); // platform-dependent
+    // EXPECT_EQ(result.error().message(), "Overflow error: Value too large for defined data type"); // platform-dependent
 }
 
 TEST(TryCatchTest, UnderflowErrorException) {
