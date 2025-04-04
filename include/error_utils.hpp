@@ -33,12 +33,14 @@ enum class ExtraError {
     // Logic errors (std::logic_error exceptions)
     invalid_argument = 1,    ///< std::invalid_argument exception.
     length_error,            ///< std::length_error exception.
+    logic_error,             ///< std::logic_error base exception.
 
     // Runtime errors (std::runtime_error exceptions)
     value_too_small,         ///< std::underflow_error exception.
     nonexistent_local_time,  ///< std::chrono::nonexistent_local_time exception.
     ambiguous_local_time,    ///< std::chrono::ambiguous_local_time exception.
     format_error,            ///< std::format_error exception.
+    runtime_error,           ///< std::runtime_error base exception.
 
     // Resource and type exceptions
     bad_alloc,               ///< std::bad_alloc exception.
@@ -56,6 +58,8 @@ enum class ExtraError {
     bad_exception,           ///< std::bad_exception exception.
     exception,               ///< all std::exception exceptions.
     unknown_exception,       ///< catch-all for any other exceptions.
+
+    unknown_error,           ///< Unknown error (not related to exceptions).
 };
 
 
@@ -123,6 +127,8 @@ enum class ExtraErrorCondition {
                         return "Invalid argument exception";
                     case ExtraError::length_error:
                         return "Length error exception";
+                    case ExtraError::logic_error:
+                        return "Logic error exception";
 
                     //
                     case ExtraError::value_too_small:
@@ -133,6 +139,8 @@ enum class ExtraErrorCondition {
                         return "Ambiguous local time exception";
                     case ExtraError::format_error:
                         return "Format error exception";
+                    case ExtraError::runtime_error:
+                        return "Runtime error exception";
 
                     //
                     case ExtraError::bad_alloc:
@@ -161,6 +169,8 @@ enum class ExtraErrorCondition {
                         return "Exception caught";
                     case ExtraError::unknown_exception:
                         return "Unknown exception caught";
+                    case ExtraError::unknown_error:
+                        return "Unknown error";
                     default:
                         return "Unrecognized ExtraError";
                 }
@@ -172,13 +182,15 @@ enum class ExtraErrorCondition {
             [[nodiscard]] std::error_condition default_error_condition(int ev) const noexcept override {
                 switch (static_cast<ExtraError>(ev)) {
                     case ExtraError::invalid_argument: [[fallthrough]];
-                    case ExtraError::length_error:
+                    case ExtraError::length_error: [[fallthrough]];
+                    case ExtraError::logic_error:
                         return {static_cast<int>(ExtraErrorCondition::logic_error), extra_error_condition_category()};
 
                     case ExtraError::value_too_small: [[fallthrough]];
                     case ExtraError::nonexistent_local_time: [[fallthrough]];
                     case ExtraError::ambiguous_local_time: [[fallthrough]];
-                    case ExtraError::format_error:
+                    case ExtraError::format_error: [[fallthrough]];
+                    case ExtraError::runtime_error:
                         return {static_cast<int>(ExtraErrorCondition::runtime_error), extra_error_condition_category()};
 
                     case ExtraError::bad_alloc: [[fallthrough]];
@@ -198,6 +210,7 @@ enum class ExtraErrorCondition {
                     case ExtraError::bad_exception: [[fallthrough]];
                     case ExtraError::exception: [[fallthrough]];
                     case ExtraError::unknown_exception: [[fallthrough]];
+                    case ExtraError::unknown_error: [[fallthrough]];
                     default:
                         return {static_cast<int>(ExtraErrorCondition::other_error), extra_error_condition_category()};
                 }
@@ -439,14 +452,14 @@ namespace error_utils {
     template <typename T>
     [[nodiscard]] constexpr Result<T> make_error(const std::regex_constants::error_type code,
                                                  std::string_view context = {}) {
-        auto create_unexpected = [&context](const std::errc &err_code, const std::string_view msg) {
+        auto create_unexpected = [&context]<typename C>(C &&err_code, const std::string_view msg) {
             if (context.ends_with("\x02")) {
                 context.remove_suffix(1);
-                return std::unexpected(Error{err_code, context});
+                return std::unexpected(Error{std::forward<C>(err_code), context});
             }
 
             return std::unexpected(Error{
-                err_code, context.empty() ? msg : std::format("{}: {}", context, msg)
+                std::forward<C>(err_code), context.empty() ? msg : std::format("{}: {}", context, msg)
             });
         };
 
@@ -508,7 +521,7 @@ namespace error_utils {
                                          "Regex error: insufficient memory to perform a match");
 
             default:
-                return create_unexpected(std::errc::invalid_argument, "Regex error: unknown error");
+                return create_unexpected(ExtraError::unknown_error, "Regex error: unknown error");
         }
     }
 
@@ -612,6 +625,8 @@ namespace error_utils {
             return create_error(std::errc::result_out_of_range, e.what());
         } catch (const std::future_error &e) {
             return create_error(e.code(), e.what());
+        } catch (const std::logic_error &e) {
+            return create_error(ExtraError::logic_error, e.what());
 
             // Runtime errors
         } catch (const std::range_error &e) {
@@ -630,6 +645,8 @@ namespace error_utils {
             return create_error(ExtraError::ambiguous_local_time, e.what());
         } catch (const std::format_error &e) {
             return create_error(ExtraError::format_error, e.what());
+        } catch (const std::runtime_error &e) {
+            return create_error(ExtraError::runtime_error, e.what());
 
             // Resource and type errors
         } catch (const std::bad_alloc &e) {
@@ -666,6 +683,9 @@ namespace error_utils {
     /// \return First successful result or combined error
     template <typename T>
     [[nodiscard]] constexpr Result<T> first_of(std::initializer_list<Result<T>> results) {
+        if (results.size() == 0) {
+            return make_error<T>(std::errc::invalid_argument, "No alternatives provided");
+        }
         std::ostringstream combined_errors;
 
         for (const auto &result : results) {
@@ -678,7 +698,7 @@ namespace error_utils {
             combined_errors << result.error().message();
         }
 
-        return make_error<T>(ExtraError::unknown_exception, combined_errors.str());
+        return make_error<T>(ExtraError::unknown_error, combined_errors.str());
     }
 } // namespace error_utils
 
