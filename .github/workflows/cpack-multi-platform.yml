@@ -86,7 +86,7 @@ jobs:
             cmake -B ${{ steps.strings.outputs.build-output-dir }} \
               -DCMAKE_CXX_COMPILER=${{ steps.compiler-path.outputs.clangxxpath }} \
               -DCMAKE_C_COMPILER=${{ steps.compiler-path.outputs.clangpath }} \
-              -DCPP_ERR_BUILD_TESTING=ON -DCPP_ERR_BUILD_EXAMPLES=ON \
+              -DCPP_ERR_PACKAGE=ON \
               -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
               -S ${{ github.workspace }} -G Ninja
           elif [[ "${{ matrix.c_compiler }}" == "gcc" ]]; then
@@ -94,7 +94,7 @@ jobs:
               -DCMAKE_CXX_COMPILER=${{ steps.compiler-path.outputs.gxxpath }} \
               -DCMAKE_C_COMPILER=${{ steps.compiler-path.outputs.gccpath }} \
               -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-              -DCPP_ERR_BUILD_TESTING=ON -DCPP_ERR_BUILD_EXAMPLES=ON \
+              -DCPP_ERR_PACKAGE=ON \
               -S ${{ github.workspace }} -G Ninja
             fi
 
@@ -105,7 +105,7 @@ jobs:
           -DCMAKE_CXX_COMPILER=${{ steps.compiler-path.outputs.clangxxpath }}
           -DCMAKE_C_COMPILER=${{ steps.compiler-path.outputs.clangpath }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-          -DCPP_ERR_BUILD_TESTING=ON -DCPP_ERR_BUILD_EXAMPLES=ON
+          -DCPP_ERR_PACKAGE=ON
           -DCMAKE_EXE_LINKER_FLAGS="-L$(brew --prefix llvm@20)/lib/c++ -Wl,-rpath,$(brew --prefix llvm@20)/lib/c++"
           -S ${{ github.workspace }} -G Ninja
 
