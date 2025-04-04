@@ -43,7 +43,7 @@ The library is header-only, so you can easily include it in your project.
 
 ### Option 1: Copy the header files (the simplest method)
 
-1. Download the header files from the [include/](./include/ "includes") directory of this repository.
+1. Download the header files from the [include/](https://github.com/dr8co/cpp_error_utils/tree/main/include "includes") directory of the repository.
 2. Place them in your project's include directory.
 3. Include the headers in your source files as needed.
 
@@ -256,7 +256,8 @@ IntResult create_directory(const std::string& path) {
 }
 ```
 
-Check out [more examples](./examples/main.cpp "examples") for additional usage patterns.
+Check out [more examples](https://github.com/dr8co/cpp_error_utils/blob/main/examples/main.cpp "examples")
+for additional usage patterns.
 
 ## Contributing
 
@@ -268,7 +269,8 @@ Contributions are welcome! Please follow these steps:
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](./LICENSE "MIT license")
+This project is licensed under the MIT License.
+See the [LICENSE](https://github.com/dr8co/cpp_error_utils/blob/main/LICENSE "MIT license")
 file for details.
 
 ## Contact
