@@ -20,8 +20,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+
+/// \file
+/// \brief Error handling utilities for C++ applications.
+/// 
+/// \details This module provides various utilities for error handling, including
+/// error codes and conditions that can be used throughout C++ applications.
+///
+/// \note This module is designed to be extensible for future error handling needs.
+
 #pragma once
 
+/// \cond
 #include <cerrno>
 #include <chrono>
 #include <concepts>
@@ -34,6 +44,7 @@
 #include <string_view>
 #include <system_error>
 #include <utility>
+/// \endcond
 
 
 // ///////////////////////// Error Codes, Conditions, and Categories ///////////////////////
