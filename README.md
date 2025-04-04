@@ -1,5 +1,7 @@
 # cpp_error_utils
 
+[![CMake Build and Test](https://github.com/dr8co/cpp_error_utils/actions/workflows/cmake-multi-platform.yml/badge.svg?branch=main)](https://github.com/dr8co/cpp_error_utils/actions/workflows/cmake-multi-platform.yml)
+
 A modern C++23 library providing robust error handling utilities
 and abstractions built around `std::expected` and `std::error_code`.
 
