@@ -7,7 +7,6 @@
 #include <format>
 #include <functional>
 #include <future>
-#include <ostream>
 #include <regex>
 #include <string>
 #include <string_view>
@@ -262,6 +261,7 @@ namespace error_utils {
         template <typename>
         struct is_expected : std::false_type {};
 
+        /// Specialization for \p std::expected<T, E> to check if a type is an expected type.
         template <typename T, typename E>
         struct is_expected<std::expected<T, E>> : std::true_type {};
 
@@ -274,11 +274,13 @@ namespace error_utils {
         concept convertible_to_error_code = (std::is_error_condition_enum_v<T> || std::is_error_code_enum_v<T>) &&
             requires { { make_error_code(std::declval<T>()) } -> std::same_as<std::error_code>; };
 
+        /// A concept to check if a type is directly convertible to \p std::error_condition via \p make_error_condition().
         template <typename T>
         concept directly_convertible_to_error_condition = requires {
             { make_error_condition(std::declval<T>()) } -> std::same_as<std::error_condition>;
         };
 
+        /// A concept to check if a type is comparable to \p std::error_code.
         template <typename T>
         concept comparable_to_error_code = convertible_to_error_code<T> || std::is_same_v<T, std::error_code> ||
             std::is_same_v<T, std::error_condition> || directly_convertible_to_error_condition<T>;
@@ -286,8 +288,8 @@ namespace error_utils {
 
     /// A wrapper class for system error codes with additional context.
     class Error {
-        std::string context_{};
-        std::error_code error_code_{};
+        std::string context_{}; ///< Context information about the error
+        std::error_code error_code_{}; ///< The system error code
 
     public:
         constexpr Error() noexcept = default;
@@ -298,6 +300,9 @@ namespace error_utils {
         constexpr explicit Error(const std::error_code &code, const std::string_view context = {})
             : context_{context}, error_code_{code} {}
 
+        /// Create an error with a type convertible to \p std::error_code and optional context.
+        /// \param code The error code
+        /// \param context Additional context information about the error
         constexpr explicit Error(const detail::convertible_to_error_code auto code, const std::string_view context = {})
             : context_{context}, error_code_{make_error_code(code)} {}
 
@@ -357,17 +362,16 @@ namespace error_utils {
             return error_code_.operator bool();
         }
 
-        // void set_context(const std::string_view context) { context_ = context; }
-        // void set_error_code(const std::error_code &error_code) { error_code_ = error_code; }
-
-        /// Get the underlying error code.
-        /// \return The error code
+        /// Returns a constant reference to the underlying error code.
         [[nodiscard]] constexpr const std::error_code &error_code() const noexcept { return error_code_; }
 
+        /// Returns a constant reference to the context string.
         [[nodiscard]] constexpr const std::string &context() const noexcept { return context_; }
 
+        /// Returns the value of the error code.
         [[nodiscard]] constexpr int value() const noexcept { return error_code_.value(); }
 
+        /// Returns the category of the error code.
         [[nodiscard]] constexpr const std::error_category &category() const noexcept {
             return error_code_.category();
         }
@@ -383,7 +387,8 @@ namespace error_utils {
 
         /// Check if the error is of a specific type.
         /// \param code The error code to check against
-        /// \return True if the error matches the specified code
+        /// \tparam T The type of the error code
+        /// \return True if the error matches the specified code.
         template <typename T>
             requires detail::comparable_to_error_code<T>
         [[nodiscard]] constexpr bool is(T &&code) const noexcept {
@@ -402,12 +407,12 @@ namespace error_utils {
             std::unreachable();
         }
 
-        /// Check if the error belongs to any of the specified error codes.
-        /// \param code The first error code to check against
-        /// \param others Other error codes to check against
-        /// \tparam Code The type of the first error code
-        /// \tparam Others The types of the other error codes
-        /// \return True if the error matches any of the specified codes
+        /// Check if the error belongs to any of the specified error codes or error conditions.
+        /// \param code The first error code/condition to check against
+        /// \param others Other error codes/conditions to check against
+        /// \tparam Code The type of the first argument
+        /// \tparam Others The types of the other arguments
+        /// \return True if the error matches any of the arguments.
         template <typename Code, typename... Others>
             requires detail::comparable_to_error_code<Code> && (detail::comparable_to_error_code<Others> && ...)
         [[nodiscard]] constexpr bool is_any_of(Code &&code, Others &&... others) const noexcept {
@@ -415,6 +420,7 @@ namespace error_utils {
             // return (is(std::forward<Code>(code)) || ... || is(std::forward<Others>(others)));
         }
 
+        /// Swap the contents of two Error objects.
         constexpr friend void swap(Error &lhs, Error &rhs) noexcept {
             using std::swap;
             swap(lhs.context_, rhs.context_);
@@ -423,36 +429,57 @@ namespace error_utils {
     };
 
 
-    // Define common result types using std::expected
+    /// A specialization of \p std::expected for the \p Error type.
+    /// \tparam T The type of the expected value. Defaults to \p void
     template <typename T = void>
     using Result = std::expected<T, Error>;
 
-    // Common result type aliases
-    using VoidResult = Result<>;
-    using StringResult = Result<std::string>;
-    using IntResult = Result<int>;
-    using BoolResult = Result<bool>;
+    // clang-format off
+    // @formatter:off
 
+    // Common result type aliases
+    using VoidResult = Result<>;               ///< Result type for void (std::expected<void, Error>)
+    using StringResult = Result<std::string>;  ///< Result type for strings (std::expected<std::string, Error>)
+    using IntResult = Result<int>;             ///< Result type for integers (std::expected<int, Error>)
+    using BoolResult = Result<bool>;           ///< Result type for booleans (std::expected<bool, Error>)
+
+    // clang-format on
+    // @formatter:on
 
     /// Create an error result of the specified type.
     /// \param code The error code
     /// \param context Optional context information
-    /// \return An unexpected result with the error
+    /// \tparam T The type of the result
+    /// \tparam E The type of the error code
+    /// \tparam Ctx The type of the context information
+    /// \return An unexpected result with the error.
     template <typename T, typename E, typename Ctx = std::string_view>
         requires detail::convertible_to_error_code<E>
     [[nodiscard]] constexpr Result<T> make_error(E &&code, Ctx &&context = {}) {
         return std::unexpected(Error{std::forward<E>(code), std::forward<Ctx>(context)});
     }
 
+    /// Create an error result of the specified type from a \p std::error_code.
+    /// \param code The std::error_code error code
+    /// \param context Optional context information
+    /// \tparam T The type of the result
+    /// \return An unexpected result with the error.
     template <typename T>
     [[nodiscard]] constexpr Result<T> make_error(const std::error_code &code, const std::string_view context = {}) {
         return std::unexpected(Error{code, context});
     }
 
+    /// Create an error result of the specified type from a \p std::regex_constants::error_type.
+    /// \param code The regex error code
+    /// \param context Optional context information
+    /// \tparam T The type of the result
+    /// \return An unexpected result with the regex error.
     template <typename T>
     [[nodiscard]] constexpr Result<T> make_error(const std::regex_constants::error_type code,
                                                  std::string_view context = {}) {
         auto create_unexpected = [&context]<typename C>(C &&err_code, const std::string_view msg) {
+            // Ignore the additional message if the error came from an exception.
+            // The exception message is already included in the context.
             if (context.ends_with("\x02")) {
                 context.remove_suffix(1);
                 return std::unexpected(Error{std::forward<C>(err_code), context});
@@ -535,6 +562,7 @@ namespace error_utils {
 
     /// Create an error result from the current errno value.
     /// \param context Optional context information
+    /// \tparam T The type of the result
     /// \return An unexpected result with the current \p errno
     template <typename T>
     [[nodiscard]] Result<T> make_error_from_errno(const std::string_view context = {}) {
@@ -547,6 +575,8 @@ namespace error_utils {
     ///
     /// \param func Function that may set errno
     /// \param error_context Context to use if an error occurs
+    /// \tparam Func The type of the function to execute
+    /// \tparam R The return type of the function. Automatically deduced.
     /// \return Result of the function or an error if errno was set
     template <typename Func, typename R = std::invoke_result_t<Func>>
     [[nodiscard]] auto with_errno(Func &&func, const std::string_view error_context = {}) -> Result<R> {
@@ -576,12 +606,13 @@ namespace error_utils {
     /// \param func Function that may set errno. Expected to return an integral type convertible to int.
     /// \tparam Func Type of the function to execute
     /// \param error_context Context to use if an error occurs
+    /// \tparam Func The type of the function to execute
     /// \return Result of the function or an error if errno was set
+    ///
     /// \note The \p errno value is reset before and after the function call.
     /// \note The function must be \p noexcept to ensure that it does not throw exceptions.
     /// \note Notice that the function must be invocable with no arguments.
-
-    /// Use a lambda or \p std::bind to wrap the function.
+    /// \note Use a lambda or \p std::bind to wrap the function.
     template <typename Func>
         requires std::is_nothrow_invocable_v<Func>
     [[nodiscard]] IntResult invoke_with_syscall_api(Func &&func, const std::string_view error_context = {}) noexcept {
@@ -603,6 +634,8 @@ namespace error_utils {
     /// Execute a function and catch common exceptions, converting them to errors.
     /// \param func Function to execute
     /// \param context Error context
+    /// \tparam Func The type of the function to execute
+    /// \tparam R The return type of the function. Automatically deduced.
     /// \return Result of the function or an error from caught exceptions
     template <typename Func, typename R = std::invoke_result_t<Func>>
     [[nodiscard]] constexpr auto try_catch(Func &&func, std::string_view context = {}) -> Result<R> {
@@ -680,25 +713,26 @@ namespace error_utils {
 
     /// Return first success result from multiple alternatives
     /// \param results Multiple results of the same type
+    /// \tparam T The type of the result
     /// \return First successful result or combined error
     template <typename T>
     [[nodiscard]] constexpr Result<T> first_of(std::initializer_list<Result<T>> results) {
         if (results.size() == 0) {
             return make_error<T>(std::errc::invalid_argument, "No alternatives provided");
         }
-        std::ostringstream combined_errors;
+        std::string combined_errors{};
 
         for (const auto &result : results) {
             if (result) {
                 return result;
             }
-            if (combined_errors.tellp() > 0) {
-                combined_errors << "; ";
+            if (!combined_errors.empty()) {
+                combined_errors += "; ";
             }
-            combined_errors << result.error().message();
+            combined_errors += result.error().message();
         }
 
-        return make_error<T>(ExtraError::unknown_error, combined_errors.str());
+        return make_error<T>(ExtraError::unknown_error, combined_errors);
     }
 } // namespace error_utils
 
