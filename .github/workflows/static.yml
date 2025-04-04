@@ -28,10 +28,10 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Install dependencies
-        run: sudo apt install -y doxygen graphviz cmake
+        run:  brew update && brew install cmake doxygen graphviz
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,7 +47,7 @@ jobs:
           cmake -B ${{ steps.strings.outputs.build-output-dir }}
           -DCMAKE_BUILD_TYPE=Release
           -DCPP_ERR_BUILD_TESTING=OFF -DCPP_ERR_BUILD_EXAMPLES=OFF -DCPP_ERR_BUILD_DOC=ON
-          -S ${{ github.workspace }} -G Ninja
+          -S ${{ github.workspace }}
 
       - name: Build Docs
         run: |
