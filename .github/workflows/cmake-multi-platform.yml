@@ -47,9 +47,9 @@ jobs:
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
               if [[ "${{ matrix.c_compiler }}" == "clang" ]]; then
                   brew update
-                  brew install ninja lld llvm@20
+                  brew install ninja lld llvm@20 gcc@14
               else
-                  brew install ninja
+                  brew install ninja gcc@14
               fi
           fi
 
@@ -105,7 +105,8 @@ jobs:
           -DCMAKE_C_COMPILER=${{ steps.compiler-path.outputs.clangpath }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DCPP_ERR_BUILD_TESTING=ON -DCPP_ERR_BUILD_EXAMPLES=ON
-          -DCMAKE_EXE_LINKER_FLAGS="-L$(brew --prefix llvm@20)/lib/c++ -Wl,-rpath,$(brew --prefix llvm@20)/lib/c++"
+          -DCMAKE_EXE_LINKER_FLAGS="-L$(brew --prefix gcc@14)/lib -Wl,-rpath,$(brew --prefix gcc@14)/lib -L$(brew --prefix gcc@14)/lib/gcc/current -Wl,-rpath,$(brew --prefix gcc@14)/lib/gcc/current"
+          -DCMAKE_CXX_FLAGS="-stdlib=libstdc++"
           -S ${{ github.workspace }} -G Ninja
 
       - name: Build
