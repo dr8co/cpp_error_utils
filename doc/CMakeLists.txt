@@ -19,7 +19,7 @@ set(DOXYGEN_PROJECT_LOGO "${PROJECT_SOURCE_DIR}/img/small_logo.jpg")
 set(DOXYGEN_GENERATE_HTML YES)
 set(DOXYGEN_GENERATE_MAN YES)
 
-doxygen_add_docs(api_doc
+doxygen_add_docs(api_docs
         "${PROJECT_SOURCE_DIR}/README.md"
         "${PROJECT_SOURCE_DIR}/include"
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/include"
