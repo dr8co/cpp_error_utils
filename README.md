@@ -21,10 +21,21 @@ and ensure robust error management.
 - Monadic operations for functional composition on `Result<T>`, from `std::expected`.
 - Lightweight and easy to integrate into existing projects.
 
+## Thread Safety
+
+This library is designed to be thread-safe.
+
+However, the thread safety of your code depends on how you use the library.
+
+If you share `Result<T>` objects across threads, ensure proper synchronization.
+
 ## Requirements
 
-- C++23 compatible compiler (GCC 14.2.0+ or Clang 19+) with a supported implemetation
-of the standard library, such as libstdc++ 14.2.0 (bundled with GCC C++ compiler).
+- C++23 compatible compiler (GCC 14.2.0+ or Clang 19+) with a supported implementation
+  of the C++ standard library, such as libstdc++ 14.2.0 (bundled with GCC C++ compiler).
+
+The library currently supports only UNIX-like systems (Linux, macOS, etc.).
+Windows support is not guaranteed but will be added in the future.
 
 ## Installation
 
@@ -53,7 +64,7 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(cpp_error_utils)
 
-target_link_libraries(your_target_name PRIVATE cpp_error_utils)
+target_link_libraries(your_target_name PRIVATE cpp_error_utils::cpp_error_utils)
 ```
 
 ### Option 3: System-wide installation
