@@ -217,8 +217,8 @@ TEST(MakeErrorTest, RegexErrorMapping) {
 TEST(MakeErrorTest, UnknownRegexErrorMapping) {
     auto result = make_error<void>(static_cast<std::regex_constants::error_type>(999), "Unknown regex error");
     EXPECT_FALSE(result);
-    EXPECT_EQ(result.error().value(), static_cast<int>(std::errc::invalid_argument));
-    EXPECT_EQ(result.error().message(), "Unknown regex error: Regex error: unknown error: Invalid argument");
+    EXPECT_EQ(result.error().value(), static_cast<int>(ExtraError::unknown_error));
+    EXPECT_EQ(result.error().message(), "Unknown regex error: Regex error: unknown error: Unknown error");
 }
 
 TEST(MakeErrorFromErrnoTest, CreateErrorFromErrno) {
@@ -546,7 +546,7 @@ TEST(FirstOfTest, AllErrors) {
     EXPECT_FALSE(combined);
     EXPECT_EQ(combined.error().message(),
               "First error: Invalid argument; Second error: Permission denied; Third error: "
-              "Operation canceled: Unknown exception caught");
+              "Operation canceled: Unknown error");
     EXPECT_EQ(combined.error().category().name(), "ExtraError");
 }
 
@@ -570,7 +570,7 @@ TEST(FirstOfTest, EmptyList) {
 TEST(FirstOfTest, SingleError) {
     auto result = first_of({make_error<int>(std::errc::invalid_argument, "Single error")});
     EXPECT_FALSE(result);
-    EXPECT_EQ(result.error().message(), "Single error: Invalid argument: Unknown exception caught");
+    EXPECT_EQ(result.error().message(), "Single error: Invalid argument: Unknown error");
 }
 
 TEST(FirstOfTest, SingleSuccess) {
