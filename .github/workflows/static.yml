@@ -45,9 +45,9 @@ jobs:
       - name: Configure CMake
         run: >
           cmake -B ${{ steps.strings.outputs.build-output-dir }}
-            -DCMAKE_BUILD_TYPE=Release
-            -DCPP_ERR_BUILD_TESTING=OFF -DCPP_ERR_BUILD_EXAMPLES=OFF -DCPP_ERR_BUILD_DOC=ON
-            -S ${{ github.workspace }} -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DCPP_ERR_BUILD_TESTING=OFF -DCPP_ERR_BUILD_EXAMPLES=OFF -DCPP_ERR_BUILD_DOC=ON
+          -S ${{ github.workspace }} -G Ninja
 
       - name: Build Docs
         run: |
