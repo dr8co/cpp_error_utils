@@ -262,4 +262,5 @@ file for details.
 
 ## Contact
 
-For questions or feedback, feel free to open an issue or contact the maintainer.
+For questions or feedback, feel free to open an issue or contact me directly at
+[dr8co@duck.com](mailto:dr8co@duck.com "Ian Duncan").
