@@ -63,32 +63,32 @@ namespace error_utils {
 /// with \p std::error_code and \p std::error_condition
 enum class ExtraError {
     // Logic errors (std::logic_error exceptions)
-    invalid_argument = 1,    ///< std::invalid_argument exception.
-    length_error,            ///< std::length_error exception.
-    logic_error,             ///< std::logic_error base exception.
+    invalid_argument = 1,    ///< \p std::invalid_argument exception.
+    length_error,            ///< \p std::length_error exception.
+    logic_error,             ///< \p std::logic_error base exception.
 
     // Runtime errors (std::runtime_error exceptions)
-    value_too_small,         ///< std::underflow_error exception.
-    nonexistent_local_time,  ///< std::chrono::nonexistent_local_time exception.
-    ambiguous_local_time,    ///< std::chrono::ambiguous_local_time exception.
-    format_error,            ///< std::format_error exception.
-    runtime_error,           ///< std::runtime_error base exception.
+    value_too_small,         ///< \p std::underflow_error exception.
+    nonexistent_local_time,  ///< \p std::chrono::nonexistent_local_time exception.
+    ambiguous_local_time,    ///< \p std::chrono::ambiguous_local_time exception.
+    format_error,            ///< \p std::format_error exception.
+    runtime_error,           ///< \p std::runtime_error base exception.
 
     // Resource and type exceptions
-    bad_alloc,               ///< std::bad_alloc exception.
-    bad_typeid,              ///< std::bad_typeid exception.
-    bad_cast,                ///< std::bad_cast exception.
+    bad_alloc,               ///< \p std::bad_alloc exception.
+    bad_typeid,              ///< \p std::bad_typeid exception.
+    bad_cast,                ///< \p std::bad_cast exception.
 
     // Container and value access exceptions
-    bad_optional_access,     ///< std::bad_optional_access exception.
-    bad_expected_access,     ///< std::bad_expected_access exception.
-    bad_variant_access,      ///< std::bad_variant_access exception.
-    bad_weak_ptr,            ///< std::bad_weak_ptr exception.
-    bad_function_call,       ///< std::bad_function_call exception.
+    bad_optional_access,     ///< \p std::bad_optional_access exception.
+    bad_expected_access,     ///< \p std::bad_expected_access exception.
+    bad_variant_access,      ///< \p std::bad_variant_access exception.
+    bad_weak_ptr,            ///< \p std::bad_weak_ptr exception.
+    bad_function_call,       ///< \p std::bad_function_call exception.
 
     // Other exceptions
-    bad_exception,           ///< std::bad_exception exception.
-    exception,               ///< all std::exception exceptions.
+    bad_exception,           ///< \p std::bad_exception exception.
+    exception,               ///< all \p std::exception exceptions.
     unknown_exception,       ///< catch-all for any other exceptions.
 
     unknown_error,           ///< Unknown error (not related to exceptions).
