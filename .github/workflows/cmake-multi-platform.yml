@@ -25,11 +25,12 @@ jobs:
             c_compiler: clang
             cpp_compiler: clang++
           - os: macos-latest
-            c_compiler: clang
-            cpp_compiler: clang++
-          - os: macos-latest
             c_compiler: gcc
             cpp_compiler: g++
+
+        exclude:
+          - os: macos-latest
+            c_compiler: clang
 
     steps:
       - name: Install Dependencies
