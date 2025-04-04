@@ -1,0 +1,117 @@
+name: CMake Build and Test
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+        build_type: [ Debug ]
+        c_compiler: [ gcc, clang ]
+        include:
+          - os: ubuntu-latest
+            c_compiler: gcc
+            cpp_compiler: g++
+          - os: ubuntu-latest
+            c_compiler: clang
+            cpp_compiler: clang++
+          - os: macos-latest
+            c_compiler: gcc
+            cpp_compiler: g++
+
+        exclude:
+          - os: macos-latest
+            c_compiler: clang
+
+    steps:
+      - name: Install Dependencies
+        shell: bash
+        run: |
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+               if [[ "${{ matrix.c_compiler }}" == "gcc" ]]; then
+                  sudo apt-get install ninja-build gcc-14 g++-14 -y
+               elif [[ "${{ matrix.c_compiler }}" == "clang" ]]; then
+                  wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+                  sudo apt-add-repository "deb http://apt.llvm.org/noble/ llvm-toolchain-noble-20 main"
+                  sudo apt-get update
+                  sudo apt-get install ninja-build clang-20 clang-tools-20 -y
+               fi
+          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+              if [[ "${{ matrix.c_compiler }}" == "clang" ]]; then
+                  brew update
+                  brew install ninja lld llvm@20 gcc@14
+              else
+                  brew install ninja gcc@14
+              fi
+          fi
+
+      - uses: actions/checkout@v4
+
+      - name: Set reusable strings
+        # Turn repeated input strings (such as the build output directory) into step outputs.
+        id: strings
+        shell: bash
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+      - name: Set Clang & GCC paths
+        id: compiler-path
+        shell: bash
+        run: |
+          if [[ "${{ matrix.os }}" == "macos-latest" && "${{ matrix.c_compiler }}" == "clang" ]]; then
+            echo "clangpath=$(brew --prefix llvm@20)/bin/clang" >> "$GITHUB_OUTPUT"
+            echo "clangxxpath=$(brew --prefix llvm@20)/bin/clang++" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ matrix.os }}" == "ubuntu-latest" && "${{ matrix.c_compiler }}" == "clang" ]]; then
+            echo "clangpath=clang-20" >> "$GITHUB_OUTPUT"
+            echo "clangxxpath=clang++-20" >> "$GITHUB_OUTPUT"
+          fi
+          
+          if [[ "${{ matrix.c_compiler }}" == "gcc" ]]; then
+            echo "gccpath=gcc-14" >> "$GITHUB_OUTPUT"
+            echo "gxxpath=g++-14" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure CMake
+        run: |
+          if [[ "${{ matrix.c_compiler }}" == "clang" && "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            cmake -B ${{ steps.strings.outputs.build-output-dir }} \
+              -DCMAKE_CXX_COMPILER=${{ steps.compiler-path.outputs.clangxxpath }} \
+              -DCMAKE_C_COMPILER=${{ steps.compiler-path.outputs.clangpath }} \
+              -DCPP_ERR_BUILD_TESTING=ON -DCPP_ERR_BUILD_EXAMPLES=ON \
+              -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+              -S ${{ github.workspace }} -G Ninja
+          elif [[ "${{ matrix.c_compiler }}" == "gcc" ]]; then
+            cmake -B ${{ steps.strings.outputs.build-output-dir }} \
+              -DCMAKE_CXX_COMPILER=${{ steps.compiler-path.outputs.gxxpath }} \
+              -DCMAKE_C_COMPILER=${{ steps.compiler-path.outputs.gccpath }} \
+              -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+              -DCPP_ERR_BUILD_TESTING=ON -DCPP_ERR_BUILD_EXAMPLES=ON \
+              -S ${{ github.workspace }} -G Ninja
+            fi
+
+      - name: Configure CMake
+        if: matrix.os == 'macos-latest' && matrix.c_compiler == 'clang'
+        run: >
+          cmake -B ${{ steps.strings.outputs.build-output-dir }}
+          -DCMAKE_CXX_COMPILER=${{ steps.compiler-path.outputs.clangxxpath }}
+          -DCMAKE_C_COMPILER=${{ steps.compiler-path.outputs.clangpath }}
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DCPP_ERR_BUILD_TESTING=ON -DCPP_ERR_BUILD_EXAMPLES=ON
+          -DCMAKE_EXE_LINKER_FLAGS="-L$(brew --prefix gcc@14)/lib -Wl,-rpath,$(brew --prefix gcc@14)/lib -L$(brew --prefix gcc@14)/lib/gcc/current -Wl,-rpath,$(brew --prefix gcc@14)/lib/gcc/current"
+          -DCMAKE_CXX_FLAGS="-stdlib=libstdc++"
+          -S ${{ github.workspace }} -G Ninja
+
+      - name: Build
+        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} -j 3
+
+      - name: Run Tests
+        run: ctest --test-dir ${{ steps.strings.outputs.build-output-dir }}/tests --output-on-failure -j 3

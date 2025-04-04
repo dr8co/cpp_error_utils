@@ -26,6 +26,8 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 add_library(cpp_error_utils INTERFACE)
 
+add_library(cpp_error_utils::cpp_error_utils ALIAS cpp_error_utils)
+
 target_include_directories(cpp_error_utils INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>

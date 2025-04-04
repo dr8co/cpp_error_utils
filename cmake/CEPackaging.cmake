@@ -55,7 +55,7 @@ set(CPACK_PACKAGE_CONTACT "Ian Duncan <dr8co@duck.com>")
 set(CPACK_PACKAGE_HOMEPAGE_URL "${PROJECT_HOMEPAGE_URL}")
 
 
-set(CPACK_OUTPUT_FILE_PREFIX "${CMAKE_SOURCE_DIR}/Packages")
+set(CPACK_OUTPUT_FILE_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/Packages")
 
 set(CPACK_SOURCE_IGNORE_FILES
         /.git
@@ -86,11 +86,11 @@ set(CPACK_RPM_FILE_NAME RPM-DEFAULT)
 
 # Set the package generator
 if (APPLE)
-    set(CPACK_GENERATOR "TGZ;DragNDrop")
+    set(CPACK_GENERATOR "TXZ;DragNDrop")
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    set(CPACK_GENERATOR "TGZ;DEB;RPM")
+    set(CPACK_GENERATOR "TXZ;DEB;RPM")
 else ()
-    set(CPACK_GENERATOR "TGZ")
+    set(CPACK_GENERATOR "TXZ")
 endif ()
 
 # Set installation directories
