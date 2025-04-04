@@ -1,3 +1,25 @@
+// MIT License
+//
+// Copyright (c) 2025 Ian Duncan
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 #pragma once
 
 #include <cerrno>
@@ -217,7 +239,7 @@ enum class ExtraErrorCondition {
         };
 
         /// This function provides a singleton instance of the \p ExtraErrorCategory class.
-        /// @return A singleton reference to the \p ExtraError error category.
+        /// \return A singleton reference to the \p ExtraError error category.
         inline const std::error_category &extra_error_category() {
             static ExtraErrorCategory instance;
             return instance;
@@ -288,8 +310,14 @@ namespace error_utils {
 
     /// A wrapper class for system error codes with additional context.
     class Error {
-        std::string context_{}; ///< Context information about the error
+        // clang-format off
+        // @formatter:off
+
+        std::string context_{};        ///< Context information about the error
         std::error_code error_code_{}; ///< The system error code
+
+        // clang-format on
+        // @formatter:on
 
     public:
         constexpr Error() noexcept = default;
