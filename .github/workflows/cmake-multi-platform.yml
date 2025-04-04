@@ -46,6 +46,7 @@ jobs:
                fi
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
               if [[ "${{ matrix.c_compiler }}" == "clang" ]]; then
+                  brew update
                   brew install ninja lld llvm@20
               else
                   brew install ninja
