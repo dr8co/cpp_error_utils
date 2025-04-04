@@ -320,7 +320,9 @@ TEST(TryCatchTest, UnderflowErrorException) {
 }
 
 TEST(TryCatchTest, RegexErrorException) {
-    auto result = try_catch([]() -> int { throw std::regex_error(std::regex_constants::error_brack); }, "Regex error");
+    auto result = try_catch([]() -> int {
+        throw std::regex_error(std::regex_constants::error_brack);
+    }, "Regex error");
     EXPECT_FALSE(result);
     EXPECT_EQ(result.error().value(), static_cast<int>(std::errc::invalid_argument));
     auto &&msg = result.error().message();
