@@ -48,14 +48,6 @@ if (CPP_ERR_DOC_DARK_THEME)
             "${AWESOME_CSS_DIR}/doxygen-awesome-sidebar-only-darkmode-toggle.css"
     )
 
-    # create the default header file
-    execute_process(COMMAND doxygen -w html header.html delete_me.html delete_me.css
-            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-            TIMEOUT 10
-            COMMAND_ERROR_IS_FATAL ANY
-
-    )
-
     # Set the generated header file as the header file for the documentation
     set(DOXYGEN_HTML_HEADER "${CMAKE_CURRENT_BINARY_DIR}/header.html")
 
