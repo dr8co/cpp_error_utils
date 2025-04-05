@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.30)
 
-cmake_dependent_option(CPP_ERR_DOC_DARK_THEME "Package the library" ON "CPP_ERR_BUILD_DOC" OFF)
+cmake_dependent_option(CPP_ERR_DOC_DARK_THEME "Enable Dark theme for the generated Doxygen docs" ON "CPP_ERR_BUILD_DOC" OFF)
 
 find_package(Doxygen)
 
