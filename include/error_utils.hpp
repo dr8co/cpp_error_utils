@@ -31,6 +31,15 @@
 
 #pragma once
 
+/// \p cpp_error_utils major version number
+#define CPP_ERROR_UTILS_VERSION_MAJOR 1
+
+/// Minor version number
+#define CPP_ERROR_UTILS_VERSION_MINOR 0
+
+/// Library patch number
+#define CPP_ERROR_UTILS_VERSION_PATCH 0
+
 /// \cond
 #include <cerrno>
 #include <chrono>

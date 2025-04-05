@@ -5,7 +5,7 @@ if (NOT UNIX)
 endif ()
 
 project(cpp_error_utils
-        VERSION 0.1.0
+        VERSION 1.0.0
         DESCRIPTION "C++ error handling utilities"
         HOMEPAGE_URL "https://github.com/dr8co/cpp_error_utils"
         LANGUAGES CXX
