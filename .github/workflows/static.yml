@@ -31,7 +31,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Install dependencies
-        run:  brew update && brew install cmake doxygen graphviz
+        run:  brew update && brew install cmake gnu-sed doxygen graphviz --formula
 
       - name: Checkout
         uses: actions/checkout@v4
