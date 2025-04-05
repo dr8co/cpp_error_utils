@@ -67,7 +67,7 @@ if (CPP_ERR_DOC_DARK_THEME)
     )
 
     # Configure the header file
-    execute_process(COMMAND "${PROJECT_SOURCE_DIR}/scripts/edit_doxyfile_headers.sh" "${CMAKE_CURRENT_BINARY_DIR}/header.html"
+    execute_process(COMMAND "${PROJECT_SOURCE_DIR}/scripts/edit_doxyfile_headers.sh"
             WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
             TIMEOUT 10
             COMMAND_ERROR_IS_FATAL ANY
