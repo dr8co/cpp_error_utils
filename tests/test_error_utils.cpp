@@ -50,9 +50,12 @@ TEST(ErrorTest, MoveAssignment) {
 
 TEST(ErrorTest, SelfAssignment) {
     Error error(std::make_error_code(std::errc::invalid_argument), "test");
-    error = error;
+    const auto &error2 = error;
+    error = error2;
     EXPECT_EQ(error.value(), static_cast<int>(std::errc::invalid_argument));
     EXPECT_EQ(error.message(), "test: Invalid argument");
+    EXPECT_EQ(&error, &error2); // Check that the address is the same
+    EXPECT_TRUE(error == error2);
 }
 
 // Test for Error class with error code and context

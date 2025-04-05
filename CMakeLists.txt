@@ -1,6 +1,11 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.30)
+
+if (NOT UNIX)
+    message(FATAL_ERROR "Currently only UNIX systems are supported.")
+endif ()
+
 project(cpp_error_utils
-        VERSION 0.1.0
+        VERSION 1.0.0
         DESCRIPTION "C++ error handling utilities"
         HOMEPAGE_URL "https://github.com/dr8co/cpp_error_utils"
         LANGUAGES CXX
@@ -19,7 +24,6 @@ cmake_dependent_option(CPP_ERR_BUILD_TESTING "Build tests" ON "PROJECT_IS_TOP_LE
 cmake_dependent_option(CPP_ERR_BUILD_EXAMPLES "Build examples" ON "PROJECT_IS_TOP_LEVEL" OFF)
 cmake_dependent_option(CPP_ERR_BUILD_DOC "Build documentation" OFF "PROJECT_IS_TOP_LEVEL" OFF)
 cmake_dependent_option(CPP_ERR_PACKAGE "Package the library" OFF "PROJECT_IS_TOP_LEVEL" OFF)
-
 
 # Set the path to additional CMake modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -50,4 +54,3 @@ endif ()
 if (CPP_ERR_BUILD_TESTING)
     add_subdirectory(tests)
 endif ()
-

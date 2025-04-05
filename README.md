@@ -21,10 +21,21 @@ and ensure robust error management.
 - Monadic operations for functional composition on `Result<T>`, from `std::expected`.
 - Lightweight and easy to integrate into existing projects.
 
+## Thread Safety
+
+This library is designed to be thread-safe.
+
+However, the thread safety of your code depends on how you use the library.
+
+If you share `Result<T>` objects across threads, ensure proper synchronization.
+
 ## Requirements
 
-- C++23 compatible compiler (GCC 14.2.0+ or Clang 19+) with a supported implemetation
-of the standard library, such as libstdc++ 14.2.0 (bundled with GCC C++ compiler).
+- C++23 compatible compiler (GCC 14.2.0+ or Clang 19+) with a supported implementation
+  of the C++ standard library, such as libstdc++ 14.2.0 (bundled with GCC C++ compiler).
+
+The library currently supports only UNIX-like systems (Linux, macOS, etc.).
+Windows support is not guaranteed but will be added in the future.
 
 ## Installation
 
@@ -32,7 +43,7 @@ The library is header-only, so you can easily include it in your project.
 
 ### Option 1: Copy the header files (the simplest method)
 
-1. Download the header files from the [include/](./include/ "includes") directory of this repository.
+1. Download the header files from the [include/](https://github.com/dr8co/cpp_error_utils/tree/main/include "includes") directory of the repository.
 2. Place them in your project's include directory.
 3. Include the headers in your source files as needed.
 
@@ -53,7 +64,7 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(cpp_error_utils)
 
-target_link_libraries(your_target_name PRIVATE cpp_error_utils)
+target_link_libraries(your_target_name PRIVATE cpp_error_utils::cpp_error_utils)
 ```
 
 ### Option 3: System-wide installation
@@ -245,7 +256,8 @@ IntResult create_directory(const std::string& path) {
 }
 ```
 
-Check out [more examples](./examples/main.cpp "examples") for additional usage patterns.
+Check out [more examples](https://github.com/dr8co/cpp_error_utils/blob/main/examples/main.cpp "examples")
+for additional usage patterns.
 
 ## Contributing
 
@@ -257,9 +269,11 @@ Contributions are welcome! Please follow these steps:
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](./LICENSE "MIT license")
+This project is licensed under the MIT License.
+See the [LICENSE](https://github.com/dr8co/cpp_error_utils/blob/main/LICENSE "MIT license")
 file for details.
 
 ## Contact
 
-For questions or feedback, feel free to open an issue or contact the maintainer.
+For questions or feedback, feel free to open an issue or contact me directly at
+[dr8co@duck.com](mailto:dr8co@duck.com "Ian Duncan").
