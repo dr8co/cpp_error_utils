@@ -56,13 +56,6 @@ if (CPP_ERR_DOC_DARK_THEME)
 
     )
 
-    # Configure the header file
-    execute_process(COMMAND "${PROJECT_SOURCE_DIR}/scripts/edit_doxyfile_headers.sh" "${CMAKE_CURRENT_BINARY_DIR}/header.html"
-            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-            TIMEOUT 10
-            COMMAND_ERROR_IS_FATAL ANY
-    )
-
     # Set the generated header file as the header file for the documentation
     set(DOXYGEN_HTML_HEADER "${CMAKE_CURRENT_BINARY_DIR}/header.html")
 
@@ -79,6 +72,13 @@ if (CPP_ERR_DOC_DARK_THEME)
             # Interactive TOC
             "${AWESOME_CSS_DIR}/doxygen-awesome-interactive-toc.js"
 
+    )
+
+    # Configure the header file
+    execute_process(COMMAND "${PROJECT_SOURCE_DIR}/scripts/edit_doxyfile_headers.sh" "${CMAKE_CURRENT_BINARY_DIR}/header.html"
+            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+            TIMEOUT 10
+            COMMAND_ERROR_IS_FATAL ANY
     )
 
 endif ()
